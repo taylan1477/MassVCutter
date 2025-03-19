@@ -1,6 +1,7 @@
 # Mass Video Cutter Tool (Toplu Video Kırpma Aracı)
 
 ## Projenin Amacı ve Çözülen Problem
-Amaç: Dizi ve filmlerdeki gereksiz kısımları (intro, outro, reklamlar ve credits) hızlıca ve toplu şekilde kırparak, kullanıcıların zamandan ve depolama alanından tasarruf etmesini sağlamak.
+Bu proje, film, dizi ve anime arşivlerini düzenleyerek zamandan ve depolamadan tasaaruf etmeyi amaçlar.
+Intro, outro ve gereksiz kısımların otomatik tespiti ve kırpılmasını sağlamayı amaçlıyor.
+JavaFX ile arayüz sağlanacak, videolar FFmpeg ile işlenecek ve farklı algoritmalarla otomatik tespit yapılacaktır.
 
-Çözülen Problem: Kullanıcılar, video kırpma işlemini ne kadar her videoya aynı şekilde yapmak isteseler bile tek tek yapmak zorundalar. Projemiz, bu süreci tek bir adımda bitirerek kullanıcı dostu bir çözüm sunuyor.
