@@ -31,6 +31,12 @@
             <version>${javafx.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-media</artifactId>
+            <version>23.0.2</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <version>${junit.version}</version>
@@ -43,6 +49,7 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
 
     <build>
         <plugins>
@@ -68,7 +75,7 @@
                         <id>default-cli</id>
                         <configuration>
                             <!-- Main class tam nitelikli adı -->
-                            <mainClass>com.example.massvideocutter.HelloApplication</mainClass>
+                            <mainClass>com.example.massvideocutter.Main</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>

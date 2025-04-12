@@ -115,6 +115,6 @@
       </VBox>
    </top>
    <center>
-      <MediaView fitHeight="200.0" fitWidth="200.0" BorderPane.alignment="CENTER" />
+      <MediaView fx:id="mediaView" fitHeight="200.0" fitWidth="200.0" BorderPane.alignment="CENTER" />
    </center>
 </BorderPane>
