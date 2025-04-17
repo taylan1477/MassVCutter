@@ -13,11 +13,19 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception {
         Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("/com/example/massvideocutter/menu.fxml")));
         primaryStage.setTitle("MassVCutter");
-        primaryStage.setScene(new Scene(root));
+
+        // Scene oluşturma
+        Scene scene = new Scene(root);
+
+        // CSS dosyasını ekleme
+        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/com/example/massvideocutter/css/style.css")).toExternalForm());
+
+        primaryStage.setScene(scene);
         primaryStage.show();
     }
 
     public static void main(String[] args) {
+        System.setProperty("jdk.disableAttachMechanism", "true");
         launch(args);
     }
 }

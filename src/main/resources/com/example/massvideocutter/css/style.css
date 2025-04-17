@@ -1,4 +1,106 @@
+/* TEMEL TEMA */
+.root {
+    -fx-base: #1e1e1e;
+    -fx-background: #1a1a1a;
+    -fx-control-inner-background: #2d2d2d;
+    -fx-text-fill: #e0e0e0;
+    -fx-accent: #FFA500;
+    -fx-focus-color: #FFB74D;
+    -fx-font-family: "Segoe UI", Arial;
+}
+
+/* MENÜ BAR */
+.menu-bar {
+    -fx-background-color: #252525;
+    -fx-padding: 5px;
+}
+.menu-bar .menu {
+    -fx-text-fill: #ffffff;
+}
+.menu-bar .menu:hover, .menu-bar .menu:showing {
+    -fx-background-color: #FFA500;
+}
+.menu-item {
+    -fx-background-color: #252525;
+}
+.menu-item:hover {
+    -fx-background-color: #FF8C00;
+}
+
+/* LİSTELER (SOL/SAĞ) */
+.list-view {
+    -fx-background-color: #252525;
+    -fx-border-color: #333333;
+    -fx-border-radius: 3px;
+}
+.list-cell {
+    -fx-background-color: #252525;
+    -fx-text-fill: #e0e0e0;
+    -fx-padding: 5px;
+}
+.list-cell:filled:selected {
+    -fx-background-color: linear-gradient(to right, #FFA500, #FF8C00);
+    -fx-text-fill: #000000;
+}
+.list-cell:filled:hover {
+    -fx-background-color: #3a3a3a;
+}
+
+/* MEDIA VIEW (VİDEO ALANI) */
+.media-view {
+    -fx-background-color: #000000;
+    -fx-border-color: #FFA500;
+    -fx-border-width: 1px;
+}
+
+/* BUTONLAR */
 .button {
-    -fx-background-color: #4CAF50;
+    -fx-background-color: #333333;
     -fx-text-fill: white;
+    -fx-background-radius: 5px;
+    -fx-border-radius: 5px;
+    -fx-border-color: #444444;
+    -fx-border-width: 1px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 1);
+}
+.button:hover {
+    -fx-background-color: #444444;
+}
+.button:pressed {
+    -fx-background-color: #555555;
+}
+
+/* ÖZEL BUTONLAR */
+#btnPlayPause, #btnExport, #btnImport {
+    -fx-background-color: linear-gradient(to bottom, #FFD700, #FFA500);
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+}
+#btnPlayPause:hover, #btnExport:hover, #btnImport:hover {
+    -fx-background-color: linear-gradient(to bottom, #FFE44D, #FFB733);
+}
+
+/* KESME BUTONLARI */
+#btnSetStart, #btnSetEnd {
+    -fx-background-color: linear-gradient(to bottom, #FFE44D, #FFB733);
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+}
+
+/* SLIDER */
+.slider {
+    -fx-control-inner-background: #333333;
+}
+.slider .thumb {
+    -fx-background-color: #FFA500;
+}
+.slider .track {
+    -fx-background-color: #444444;
+}
+
+/* PROGRESS BAR */
+.progress-bar {
+    -fx-accent: #FFA500;
+    -fx-control-inner-background: #333333;
 }
