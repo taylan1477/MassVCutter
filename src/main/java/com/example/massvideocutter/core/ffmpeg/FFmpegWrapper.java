@@ -1,60 +1,58 @@
-package com.example.massvideocutter.core;
+package com.example.massvideocutter.core.ffmpeg;
 
+import com.example.massvideocutter.core.ffmpeg.command.FFmpegCommandBuilder;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.List;
 
 public class FFmpegWrapper {
     private static final Logger LOGGER = Logger.getLogger(FFmpegWrapper.class.getName());
 
     public boolean trimVideo(String inputPath, String outputPath, String startTime, String duration) {
-        String ffmpegPath = "C:\\Projeler\\ffmpeg-7.1.1\\bin\\ffmpeg.exe";
+        String extension = getFileExtension(outputPath);
+        FFmpegCommandBuilder builder = FFmpegCommandFactory.getBuilder(extension);
+        List<String> command = builder.buildCommand(inputPath, outputPath, startTime, duration);
 
-        ProcessBuilder builder = new ProcessBuilder(
-                ffmpegPath,
-                "-hide_banner",      // Versiyon bilgisini gizle
-                "-loglevel", "error", // Sadece hataları göster
-                "-i", inputPath,
-                "-ss", startTime,
-                "-t", duration,
-                "-c", "copy",
-                outputPath
-        );
-
-        builder.redirectErrorStream(true);
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        processBuilder.redirectErrorStream(true);
 
         try {
-            Process process = builder.start();
+            Process process = processBuilder.start();
 
-            // Capture FFmpeg output for logging
+            // Optionally log the FFmpeg output for debugging
             try (BufferedReader reader = new BufferedReader(
                     new InputStreamReader(process.getInputStream()))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    LOGGER.info("FFmpeg: " + line);
+                    LOGGER.log(Level.FINE, "FFmpeg output: {0}", line);
                 }
             }
 
             int exitCode = process.waitFor();
-
             if (exitCode != 0) {
-                LOGGER.log(Level.SEVERE, "FFmpeg process failed with exit code: " + exitCode);
+                LOGGER.log(Level.WARNING, "FFmpeg process exited with non-zero code: {0}", exitCode);
                 return false;
             }
-
             return true;
-
         } catch (IOException e) {
-            LOGGER.log(Level.SEVERE, "IO Error executing FFmpeg command", e);
+            LOGGER.log(Level.SEVERE, "IO error while executing FFmpeg command", e);
             return false;
         } catch (InterruptedException e) {
-            LOGGER.log(Level.SEVERE, "FFmpeg process was interrupted", e);
-            Thread.currentThread().interrupt(); // Restore the interrupted status
+            LOGGER.log(Level.SEVERE, "Thread interrupted while waiting for FFmpeg process", e);
+            Thread.currentThread().interrupt(); // Restore interrupted status
             return false;
         }
     }
+
+    private String getFileExtension(String filename) {
+        int lastDot = filename.lastIndexOf(".");
+        if (lastDot == -1) return "";
+        return filename.substring(lastDot + 1);
+    }
+
     public static class TestFFmpeg {
         public static void main(String[] args) {
             FFmpegWrapper cutter = new FFmpegWrapper();
@@ -67,5 +65,4 @@ public class FFmpegWrapper {
             System.out.println("Kesme işlemi: " + (success ? "Başarılı" : "Başarısız"));
         }
     }
-
 }
