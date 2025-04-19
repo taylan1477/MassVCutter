@@ -16,6 +16,10 @@ public class FFmpegWrapper {
         FFmpegCommandBuilder builder = FFmpegCommandFactory.getBuilder(extension);
         List<String> command = builder.buildCommand(inputPath, outputPath, startTime, duration);
 
+        // Replace the first command element with the full FFmpeg path
+        String ffmpegPath = "C:/Projeler/ffmpeg-7.1.1/bin/ffmpeg.exe";
+        command.set(0, ffmpegPath);
+
         ProcessBuilder processBuilder = new ProcessBuilder(command);
         processBuilder.redirectErrorStream(true);
 
@@ -57,8 +61,8 @@ public class FFmpegWrapper {
         public static void main(String[] args) {
             FFmpegWrapper cutter = new FFmpegWrapper();
             boolean success = cutter.trimVideo(
-                    "C:\\Users\\Taylan Özgür Özdemir\\Desktop\\Files\\Live Wallpaper\\Fight Club - Darkness.mp4",
-                    "output.mp4",
+                    "C:\\Users\\Taylan Özgür Özdemir\\Desktop\\Files\\Live Wallpaper\\Fight Club ts.ts",
+                    "TS output.ts",
                     "00:00:01",
                     "00:00:10"
             );

@@ -10,6 +10,7 @@ public class FFmpegCommandFactory {
         if (extension == null) {
             throw new IllegalArgumentException("Dosya uzantısı null olamaz");
         }
+        System.out.println("Extension: " + extension);
 
         return switch (extension.toLowerCase()) {
             case "mp4" -> new MP4CommandBuilder();
