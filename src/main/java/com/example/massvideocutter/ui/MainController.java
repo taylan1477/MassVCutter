@@ -12,7 +12,10 @@ import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.util.Duration;
+
 import java.io.File;
+import java.util.List;
 
 
 public class MainController {
@@ -28,39 +31,70 @@ public class MainController {
 
     private final ManualTrimHandler trimHandler = new ManualTrimHandler();
 
+    private boolean isSliderBeingDragged = false;
+    private double startTimeInSec = 0;
+    private double endTimeInSec = 0;
+
     @FXML
     public void initialize() {
-        btnSetStart.setOnAction(e -> setTrimPoint(true));
-        btnSetEnd.setOnAction(e -> setTrimPoint(false));
+
+        // Slider sürüklenme olaylarını burada ayarlayabilirsiniz (mediaPlayer'a bağlı değil)
+        timelineSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
+            isSliderBeingDragged = isChanging;
+            if (!isChanging && mediaPlayer != null) {
+                mediaPlayer.seek(Duration.seconds(timelineSlider.getValue()));
+            }
+        });
+
+        timelineSlider.setOnMouseReleased(event -> {
+            if (mediaPlayer != null) {
+                mediaPlayer.seek(Duration.seconds(timelineSlider.getValue()));
+            }
+        });
     }
 
-    // Video dosyasını seçme işlevi
     @FXML
     private void handleImportButtonAction() {
-        // FileChooser nesnesi oluştur
         FileChooser fileChooser = new FileChooser();
-
-        // Dosya uzantılarını filtrele
         FileChooser.ExtensionFilter videoFilter = new FileChooser.ExtensionFilter("Video Files", "*.mp4", "*.mkv", "*.avi", "*.mov");
         fileChooser.getExtensionFilters().add(videoFilter);
-
-        // Dosya seçme penceresini göster
         File selectedFile = fileChooser.showOpenDialog(new Stage());
 
         if (selectedFile != null) {
-            // Seçilen dosyayı Media nesnesine dönüştür
             Media media = new Media(selectedFile.toURI().toString());
 
-            // MediaPlayer nesnesini oluştur
             if (mediaPlayer != null) {
-                mediaPlayer.stop(); // Eğer önceden bir video oynatılıyorsa durdur
+                mediaPlayer.stop();
             }
 
             mediaPlayer = new MediaPlayer(media);
-            mediaView.setMediaPlayer(mediaPlayer); // MediaPlayer'ı MediaView'a bağla
+            mediaView.setMediaPlayer(mediaPlayer);
 
-            // Videoyu başlat
+            // MEDIAPLAYER HAZIR OLDUĞUNDA YAPILACAKLAR
+            mediaPlayer.setOnReady(() -> {
+                Duration total = mediaPlayer.getMedia().getDuration();
+                timelineSlider.setMax(total.toSeconds());
+
+                // Zamanlayıcıyı mediaPlayer'a bağla
+                mediaPlayer.currentTimeProperty().addListener((obs, oldTime, newTime) -> {
+                    if (!isSliderBeingDragged) {
+                        timelineSlider.setValue(newTime.toSeconds());
+                    }
+                });
+            });
+
             mediaPlayer.play();
+        }
+        fileChooser.setTitle("Videoları Seç");
+        List<File> selectedFiles = fileChooser.showOpenMultipleDialog(new Stage());
+
+        if (selectedFiles != null) {
+            for (File file : selectedFiles) {
+                String filePath = file.toURI().toString();
+                if (!fileListView.getItems().contains(filePath)) {
+                    fileListView.getItems().add(filePath);
+                }
+            }
         }
     }
 
@@ -97,22 +131,15 @@ public class MainController {
         }
     }
 
-    private void setTrimPoint(boolean isStart) {
-        String selectedFile = fileListView.getSelectionModel().getSelectedItem();
-        if (selectedFile == null || mediaView.getMediaPlayer() == null) return;
+    @FXML
+    private void onSetStartClicked() {
+        startTimeInSec = timelineSlider.getValue();
+        System.out.println("Start set to: " + startTimeInSec + " seconds");
+    }
 
-        MediaPlayer player = mediaView.getMediaPlayer();
-        double currentTime = player.getCurrentTime().toSeconds();
-
-        if (isStart) {
-            trimHandler.setStartTime(selectedFile, currentTime);
-        } else {
-            trimHandler.setEndTime(selectedFile, currentTime);
-        }
-
-        // Güncelleme için inspector ListView'a yazdır
-        inspector.getItems().removeIf(item -> item.startsWith(selectedFile));
-        ManualTrimHandler.TrimPoints points = trimHandler.getTrimPoints(selectedFile);
-        inspector.getItems().add(selectedFile + " -> " + points);
+    @FXML
+    private void onSetEndClicked() {
+        endTimeInSec = timelineSlider.getValue();
+        System.out.println("End set to: " + endTimeInSec + " seconds");
     }
 }
