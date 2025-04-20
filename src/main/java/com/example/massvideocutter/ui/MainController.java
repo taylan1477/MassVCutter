@@ -15,7 +15,6 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.io.File;
-import java.util.List;
 
 
 public class MainController {
@@ -84,17 +83,6 @@ public class MainController {
             });
 
             mediaPlayer.play();
-        }
-        fileChooser.setTitle("Videoları Seç");
-        List<File> selectedFiles = fileChooser.showOpenMultipleDialog(new Stage());
-
-        if (selectedFiles != null) {
-            for (File file : selectedFiles) {
-                String filePath = file.toURI().toString();
-                if (!fileListView.getItems().contains(filePath)) {
-                    fileListView.getItems().add(filePath);
-                }
-            }
         }
     }
 
