@@ -2,11 +2,7 @@ package com.example.massvideocutter.ui;
 
 import com.example.massvideocutter.core.ManualTrimHandler;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.Slider;
+import javafx.scene.control.*;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
@@ -15,12 +11,13 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.io.File;
+import java.util.List;
 
 
 public class MainController {
 
     @FXML private Button btnExport, btnImport, btnForward, btnPlayPause, btnRewind, btnSetEnd, btnSetStart;
-    @FXML private ListView<String> fileListView;
+    @FXML private ListView<File> fileListView;  // String -> File
     @FXML private ListView<String> inspector;
     @FXML private MenuBar menuBar;
     @FXML private ProgressBar progressBar;
@@ -36,8 +33,23 @@ public class MainController {
 
     @FXML
     public void initialize() {
+        // 2) CellFactory: hücrede sadece dosya adı göster
+        fileListView.setCellFactory(param -> new ListCell<File>() {
+            @Override
+            protected void updateItem(File item, boolean empty) {
+                super.updateItem(item, empty);
+                setText((empty || item == null) ? null : item.getName());
+            }
+        });
 
-        // Slider sürüklenme olaylarını burada ayarlayabilirsiniz (mediaPlayer'a bağlı değil)
+        // 3) Seçilen dosyayı oynatma
+        fileListView.getSelectionModel().selectedItemProperty().addListener((obs, oldFile, newFile) -> {
+            if (newFile != null) {
+                playVideo(newFile);
+            }
+        });
+
+        // Zaten slider init vs. burada kalabilir…
         timelineSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
             isSliderBeingDragged = isChanging;
             if (!isChanging && mediaPlayer != null) {
@@ -55,35 +67,46 @@ public class MainController {
     @FXML
     private void handleImportButtonAction() {
         FileChooser fileChooser = new FileChooser();
-        FileChooser.ExtensionFilter videoFilter = new FileChooser.ExtensionFilter("Video Files", "*.mp4", "*.mkv", "*.avi", "*.mov");
-        fileChooser.getExtensionFilters().add(videoFilter);
-        File selectedFile = fileChooser.showOpenDialog(new Stage());
+        fileChooser.setTitle("Videoları Seç");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Video Files", "*.mp4", "*.mkv", "*.avi", "*.mov")
+        );
+        List<File> selectedFiles = fileChooser.showOpenMultipleDialog(new Stage());
 
-        if (selectedFile != null) {
-            Media media = new Media(selectedFile.toURI().toString());
-
-            if (mediaPlayer != null) {
-                mediaPlayer.stop();
+        if (selectedFiles != null) {
+            for (File file : selectedFiles) {
+                if (!fileListView.getItems().contains(file)) {
+                    fileListView.getItems().add(file);
+                }
             }
 
-            mediaPlayer = new MediaPlayer(media);
-            mediaView.setMediaPlayer(mediaPlayer);
-
-            // MEDIAPLAYER HAZIR OLDUĞUNDA YAPILACAKLAR
-            mediaPlayer.setOnReady(() -> {
-                Duration total = mediaPlayer.getMedia().getDuration();
-                timelineSlider.setMax(total.toSeconds());
-
-                // Zamanlayıcıyı mediaPlayer'a bağla
-                mediaPlayer.currentTimeProperty().addListener((obs, oldTime, newTime) -> {
-                    if (!isSliderBeingDragged) {
-                        timelineSlider.setValue(newTime.toSeconds());
-                    }
-                });
-            });
-
-            mediaPlayer.play();
+            // İlk videoyu seç ve oynat
+            if (!fileListView.getItems().isEmpty()) {
+                fileListView.getSelectionModel().select(0);
+            }
         }
+    }
+
+    // 4) playVideo artık File alıyor
+    private void playVideo(File file) {
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+        }
+        Media media = new Media(file.toURI().toString());
+        mediaPlayer = new MediaPlayer(media);
+        mediaView.setMediaPlayer(mediaPlayer);
+
+        mediaPlayer.setOnReady(() -> {
+            Duration total = mediaPlayer.getMedia().getDuration();
+            timelineSlider.setMax(total.toSeconds());
+            mediaPlayer.currentTimeProperty().addListener((obs, oldTime, newTime) -> {
+                if (!isSliderBeingDragged) {
+                    timelineSlider.setValue(newTime.toSeconds());
+                }
+            });
+        });
+
+        mediaPlayer.play();
     }
 
     // Play/Pause işlevi
