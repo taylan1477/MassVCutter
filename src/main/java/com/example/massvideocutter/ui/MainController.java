@@ -1,6 +1,7 @@
 package com.example.massvideocutter.ui;
 
 import com.example.massvideocutter.core.ManualTrimHandler;
+import com.example.massvideocutter.core.ffmpeg.FFmpegWrapper;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.media.Media;
@@ -24,6 +25,8 @@ public class MainController {
     @FXML private Slider timelineSlider;
     @FXML private MediaView mediaView;
     private MediaPlayer mediaPlayer;
+
+    FFmpegWrapper ffmpegWrapper = new FFmpegWrapper();
 
     private final ManualTrimHandler trimHandler = new ManualTrimHandler();
 
@@ -62,6 +65,8 @@ public class MainController {
                 mediaPlayer.seek(Duration.seconds(timelineSlider.getValue()));
             }
         });
+
+
     }
 
     @FXML
@@ -143,14 +148,44 @@ public class MainController {
     }
 
     @FXML
-    private void onSetStartClicked() {
+    private void handleSetStart() {
         startTimeInSec = timelineSlider.getValue();
         System.out.println("Start set to: " + startTimeInSec + " seconds");
     }
 
     @FXML
-    private void onSetEndClicked() {
+    private void handleSetEnd() {
         endTimeInSec = timelineSlider.getValue();
         System.out.println("End set to: " + endTimeInSec + " seconds");
+    }
+
+    @FXML
+    private void handleTrim() {
+        File selectedFile = fileListView.getSelectionModel().getSelectedItem();
+        if (selectedFile == null) {
+            System.out.println("Trim işlemi için bir video seçilmedi.");
+            return;
+        }
+
+        String inputPath = selectedFile.getAbsolutePath();
+        String outputPath = inputPath.replace(".mp4", "_cut.mp4"); // Gerekirse uzantı kontrolü yap
+
+        String start = formatSeconds(startTimeInSec);
+        String duration = formatSeconds(endTimeInSec - startTimeInSec);
+
+        boolean success = ffmpegWrapper.trimVideo(inputPath, outputPath, start, duration);
+        if (success) {
+            System.out.println("Kırpma başarılı!");
+        } else {
+            System.out.println("Kırpma başarısız.");
+        }
+    }
+
+    private String formatSeconds(double seconds) {
+        int total = (int) seconds;
+        int h = total / 3600;
+        int m = (total % 3600) / 60;
+        int s = total % 60;
+        return String.format("%02d:%02d:%02d", h, m, s);
     }
 }
