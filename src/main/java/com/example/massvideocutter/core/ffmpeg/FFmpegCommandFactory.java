@@ -1,9 +1,9 @@
 package com.example.massvideocutter.core.ffmpeg;
 
 import com.example.massvideocutter.core.ffmpeg.command.FFmpegCommandBuilder;
-import com.example.massvideocutter.core.ffmpeg.command.MKVCommandBuilder;
 import com.example.massvideocutter.core.ffmpeg.command.MP4CommandBuilder;
-import com.example.massvideocutter.core.ffmpeg.command.TSCommandBuilder;
+import com.example.massvideocutter.core.ffmpeg.command.CompositeCommandBuilder;
+import com.example.massvideocutter.core.ffmpeg.command.RemuxToMp4Builder;
 
 public class FFmpegCommandFactory {
     public static FFmpegCommandBuilder getBuilder(String extension) {
@@ -14,8 +14,10 @@ public class FFmpegCommandFactory {
 
         return switch (extension.toLowerCase()) {
             case "mp4" -> new MP4CommandBuilder();
-            case "ts" -> new TSCommandBuilder();
-            case "mkv" -> new MKVCommandBuilder();
+            case "ts", "mkv" -> new CompositeCommandBuilder(
+                    new RemuxToMp4Builder(),
+                    new MP4CommandBuilder()
+            ) {};
             default -> throw new UnsupportedOperationException("Desteklenmeyen format: " + extension);
         };
     }
