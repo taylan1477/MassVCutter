@@ -28,8 +28,6 @@ public class MainController {
 
     FFmpegWrapper ffmpegWrapper = new FFmpegWrapper();
 
-    private final ManualTrimHandler trimHandler = new ManualTrimHandler();
-
     private boolean isSliderBeingDragged = false;
     private double startTimeInSec = 0;
     private double endTimeInSec = 0;
@@ -74,7 +72,7 @@ public class MainController {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Videoları Seç");
         fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Video Files", "*.mp4", "*.mkv", "*.avi", "*.mov")
+                new FileChooser.ExtensionFilter("Video Files", "*.mp4","*.ts", "*.mkv", "*.avi", "*.mov")
         );
         List<File> selectedFiles = fileChooser.showOpenMultipleDialog(new Stage());
 

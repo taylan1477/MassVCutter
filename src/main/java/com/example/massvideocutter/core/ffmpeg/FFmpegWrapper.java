@@ -14,9 +14,10 @@ public class FFmpegWrapper {
     public boolean trimVideo(String inputPath, String outputPath, String startTime, String duration) {
         String extension = getFileExtension(outputPath);
         FFmpegCommandBuilder builder = FFmpegCommandFactory.getBuilder(extension);
+        System.out.println(">>> Selected builder: " + builder.getClass().getSimpleName());
         List<String> command = builder.buildCommand(inputPath, outputPath, startTime, duration);
+        System.out.println(">>> Built command: " + command);
 
-        // Replace the first command element with the full FFmpeg path
         String ffmpegPath = "C:/Projeler/ffmpeg-7.1.1/bin/ffmpeg.exe";
         command.set(0, ffmpegPath);
 
