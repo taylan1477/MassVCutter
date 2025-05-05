@@ -1,7 +1,10 @@
 package com.example.massvideocutter.ui;
 
-import com.example.massvideocutter.core.ManualTrimHandler;
-import com.example.massvideocutter.core.ffmpeg.FFmpegWrapper;
+import com.example.massvideocutter.core.BatchProcessFacade;
+import com.example.massvideocutter.core.TaskManager;
+import com.example.massvideocutter.core.TrimFacade;
+
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.media.Media;
@@ -10,6 +13,7 @@ import javafx.scene.media.MediaView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import javafx.scene.control.Label;
 
 import java.io.File;
 import java.util.List;
@@ -17,7 +21,7 @@ import java.util.List;
 
 public class MainController {
 
-    @FXML private Button btnExport, btnImport, btnForward, btnPlayPause, btnRewind, btnSetEnd, btnSetStart;
+    @FXML private Label infolabel;
     @FXML private ListView<File> fileListView;  // String -> File
     @FXML private ListView<String> inspector;
     @FXML private MenuBar menuBar;
@@ -26,15 +30,21 @@ public class MainController {
     @FXML private MediaView mediaView;
     private MediaPlayer mediaPlayer;
 
-    FFmpegWrapper ffmpegWrapper = new FFmpegWrapper();
+    TrimFacade trimFacade = new TrimFacade();
 
     private boolean isSliderBeingDragged = false;
     private double startTimeInSec = 0;
     private double endTimeInSec = 0;
+    private BatchProcessFacade batchFacade;
 
     @FXML
     public void initialize() {
-        // 2) CellFactory: hücrede sadece dosya adı göster
+
+        TaskManager taskManager = new TaskManager();
+        this.trimFacade   = new TrimFacade();
+        this.batchFacade  = new BatchProcessFacade(trimFacade, taskManager);
+
+        // CellFactory: hücrede sadece dosya adı göster
         fileListView.setCellFactory(param -> new ListCell<File>() {
             @Override
             protected void updateItem(File item, boolean empty) {
@@ -43,7 +53,7 @@ public class MainController {
             }
         });
 
-        // 3) Seçilen dosyayı oynatma
+        // Seçilen dosyayı oynatma
         fileListView.getSelectionModel().selectedItemProperty().addListener((obs, oldFile, newFile) -> {
             if (newFile != null) {
                 playVideo(newFile);
@@ -63,8 +73,6 @@ public class MainController {
                 mediaPlayer.seek(Duration.seconds(timelineSlider.getValue()));
             }
         });
-
-
     }
 
     @FXML
@@ -90,7 +98,7 @@ public class MainController {
         }
     }
 
-    // 4) playVideo artık File alıyor
+    // playVideo artık File alıyor
     private void playVideo(File file) {
         if (mediaPlayer != null) {
             mediaPlayer.stop();
@@ -166,12 +174,10 @@ public class MainController {
         }
 
         String inputPath = selectedFile.getAbsolutePath();
-        String outputPath = inputPath.replace(".mp4", "_cut.mp4"); // Gerekirse uzantı kontrolü yap
+        String outputPath = inputPath.replace(".mp4", "_cut.mp4");
 
-        String start = formatSeconds(startTimeInSec);
-        String duration = formatSeconds(endTimeInSec - startTimeInSec);
+        boolean success = trimFacade.trimVideo(inputPath, outputPath, startTimeInSec, endTimeInSec);
 
-        boolean success = ffmpegWrapper.trimVideo(inputPath, outputPath, start, duration);
         if (success) {
             System.out.println("Kırpma başarılı!");
         } else {
@@ -186,4 +192,33 @@ public class MainController {
         int s = total % 60;
         return String.format("%02d:%02d:%02d", h, m, s);
     }
+
+    @FXML
+    private void handleBatchTrim() {
+        List<File> files = fileListView.getItems();
+        if (files.isEmpty()) {
+            infolabel.setText("Önce dosya seçmelisin!");
+            return;
+        }
+
+        progressBar.setProgress(0);
+        inspector.getItems().clear();   // Önceki logları temizleyelim
+
+        final int total = files.size();
+        final int[] done = {0};
+
+        batchFacade.processAll(files, startTimeInSec, endTimeInSec, (file, success, output) -> {
+            Platform.runLater(() -> {
+                done[0]++;
+                double progress = (double) done[0] / total;
+                progressBar.setProgress(progress);
+                String status = success ? "OK" : "ERR";
+                inspector.getItems().add(file.getName() + " → " + status);
+                if (done[0] == total) {
+                    infolabel.setText("Toplu kırpma tamamlandı!");
+                }
+            });
+        });
+    }
+
 }
