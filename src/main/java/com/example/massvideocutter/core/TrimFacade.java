@@ -3,7 +3,7 @@ package com.example.massvideocutter.core;
 import com.example.massvideocutter.core.ffmpeg.FFmpegWrapper;
 
 public class TrimFacade {
-    private FFmpegWrapper ffmpegWrapper;
+    private final FFmpegWrapper ffmpegWrapper;
 
     public TrimFacade() {
         this.ffmpegWrapper = new FFmpegWrapper(); // İleride bağımlılığı dışarıdan alabilirsin
