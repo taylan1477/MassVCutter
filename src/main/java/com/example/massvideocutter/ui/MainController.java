@@ -67,7 +67,7 @@ public class MainController {
         choiceMethod.getItems().addAll(TrimMethod.values());
         choiceMethod.setValue(TrimMethod.MANUAL);
 
-        double silenceThreshold   = -90.0;  // örnek dB eşiği
+        double silenceThreshold   = -30.0;  // örnek dB eşiği
         double minSilenceDuration = 5.0;    // örnek saniye cinsinden
         FFmpegWrapper ffmpegWrapper = new FFmpegWrapper();
 

@@ -3,6 +3,12 @@ package com.example.massvideocutter.core;
 import com.example.massvideocutter.core.ffmpeg.FFmpegWrapper;
 
 import java.util.List;
+import java.util.Locale;
+
+// …
+
+
+
 
 public class AudioAnalyzerStrategy implements TrimStrategy {
     private final TrimFacade trimFacade;
@@ -11,50 +17,55 @@ public class AudioAnalyzerStrategy implements TrimStrategy {
     private final double silenceThreshold;   // dB cinsinden
     private final double minSilenceDuration; // saniye cinsinden
 
-    public AudioAnalyzerStrategy(TrimFacade trimFacade, FFmpegWrapper ffmpegWrapper,
-                                 double silenceThreshold, double minSilenceDuration) {
+
+    public AudioAnalyzerStrategy(TrimFacade trimFacade,
+                                 FFmpegWrapper ffmpegWrapper,
+                                 double silenceThreshold,
+                                 double minSilenceDuration) {
         this.trimFacade        = trimFacade;
         this.ffmpegWrapper     = ffmpegWrapper;
         this.analyzer          = new AudioAnalyzer();
-        this.silenceThreshold   = silenceThreshold;
+        this.silenceThreshold  = silenceThreshold;
         this.minSilenceDuration = minSilenceDuration;
     }
+
 
     @Override
     public boolean trim(String inputPath, String outputPath, double ignoredStart, double ignoredEnd) {
         try {
-            // 1. FFmpegWrapper ile silencedetect filtresi çalıştır
+            // FFmpegWrapper içine yeni metot ekleyelim:
+            Process process = ffmpegWrapper.executeSilenceDetect(
+                    inputPath, silenceThreshold, minSilenceDuration
+            );
             List<String> cmd = List.of(
                     FFmpegWrapper.getExecutablePath(),
                     "-i", inputPath,
-                    "-af", String.format("silencedetect=n=%fdB:d=%f", silenceThreshold, minSilenceDuration),
+                    "-af", String.format(Locale.US, "silencedetect=n=%sdB:d=%f",
+                            silenceThreshold, minSilenceDuration),
                     "-f", "null", "-"
             );
-            Process process = new ProcessBuilder(cmd).redirectErrorStream(true).start();
 
-            // 2. Analiz et
-            List<AudioAnalyzer.SilenceSegment> segments = analyzer.analyzeSilenceFromStream(process);
+            // stderr üzerinden sessiz segmentleri al
+            List<AudioAnalyzer.SilenceSegment> segments =
+                    analyzer.analyzeSilenceFromProcess(process);
+
             if (segments.isEmpty()) {
                 System.out.println("Sessiz segment bulunamadı.");
                 return false;
             }
 
-            // 3. İlk sessiz segmentin bitişinden başlayıp, son sessiz segmentin başlangıcına kadar kırp
+            // İlk ve son segmente index ile eriş
             double trimStart = segments.getFirst().end;
             double trimEnd   = segments.getLast().start;
 
             System.out.printf("Trim aralığı: %.2f - %.2f%n", trimStart, trimEnd);
 
-            // 4. TrimFacade ile gerçek kırpma
+            // Trim işlemi (TrimFacade zaten start/end string değil saniye bazlı overload da ekleyebilir)
             return trimFacade.trimVideo(inputPath, outputPath, trimStart, trimEnd);
 
         } catch (Exception e) {
             e.printStackTrace();
             return false;
         }
-    }
-
-    public FFmpegWrapper getFfmpegWrapper() {
-        return ffmpegWrapper;
     }
 }

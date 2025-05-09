@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
+import java.util.Locale;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -74,4 +75,21 @@ public class FFmpegWrapper {
         if (lastDot == -1) return "";
         return filename.substring(lastDot + 1);
     }
+
+    public Process executeSilenceDetect(String inputPath,
+                                        double silenceThreshold,
+                                        double minSilenceDuration) throws IOException {
+        List<String> cmd = List.of(
+                FFMPEG_PATH,
+                "-i", inputPath,
+                "-af", String.format(Locale.US, "silencedetect=n=%sdB:d=%f",
+                        silenceThreshold, minSilenceDuration),
+                "-f", "null", "-"
+        );
+        System.out.println(">>> [DEBUG] Running silence-detect command: " + String.join(" ", cmd));
+        return new ProcessBuilder(cmd)
+                .redirectErrorStream(false)
+                .start();
+    }
+
 }
