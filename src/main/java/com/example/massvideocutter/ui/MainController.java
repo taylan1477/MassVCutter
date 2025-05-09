@@ -1,9 +1,8 @@
 package com.example.massvideocutter.ui;
 
-import com.example.massvideocutter.core.BatchProcessFacade;
-import com.example.massvideocutter.core.TaskManager;
-import com.example.massvideocutter.core.TrimFacade;
+import com.example.massvideocutter.core.*;
 
+import com.example.massvideocutter.core.ffmpeg.FFmpegWrapper;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
@@ -17,6 +16,7 @@ import javafx.scene.control.Label;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
 
 
 public class MainController {
@@ -27,6 +27,8 @@ public class MainController {
     @FXML private MenuBar menuBar;
     @FXML private ProgressBar progressBar;
     @FXML private Slider timelineSlider;
+    @FXML private ChoiceBox<TrimMethod> choiceMethod;
+    private Map<TrimMethod, TrimStrategy> strategies;
     @FXML private MediaView mediaView;
     private MediaPlayer mediaPlayer;
 
@@ -59,6 +61,25 @@ public class MainController {
                 playVideo(newFile);
             }
         });
+
+        // ... var olan init kodun ...
+        // 1. ChoiceBox’a enum ekle
+        choiceMethod.getItems().addAll(TrimMethod.values());
+        choiceMethod.setValue(TrimMethod.MANUAL);
+
+        double silenceThreshold   = -90.0;  // örnek dB eşiği
+        double minSilenceDuration = 5.0;    // örnek saniye cinsinden
+        FFmpegWrapper ffmpegWrapper = new FFmpegWrapper();
+
+        strategies = Map.of(
+                TrimMethod.MANUAL, new ManualTrimStrategy(trimFacade),
+                TrimMethod.AUDIO_ANALYZER, new AudioAnalyzerStrategy(
+                        trimFacade,
+                        ffmpegWrapper,
+                        silenceThreshold,
+                        minSilenceDuration
+                )
+        );
 
         // Zaten slider init vs. burada kalabilir…
         timelineSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
@@ -167,27 +188,27 @@ public class MainController {
 
     @FXML
     private void handleTrim() {
-        File selectedFile = fileListView.getSelectionModel().getSelectedItem();
-        if (selectedFile == null) {
-            System.out.println("Trim işlemi için bir video seçilmedi.");
+        File file = fileListView.getSelectionModel().getSelectedItem();
+        if (file == null) {
+            infolabel.setText("Önce video seç!");
             return;
         }
 
-        String inputPath = selectedFile.getAbsolutePath();
-        String outputPath = inputPath.replace(".mp4", "_cut.mp4");
+        String in  = file.getAbsolutePath();
+        String out = in.replace(".", "_cut."); // uzantı koru
+        TrimMethod method = choiceMethod.getValue();
+        TrimStrategy strategy = strategies.get(method);
 
-        boolean success = trimFacade.trimVideo(inputPath, outputPath, startTimeInSec, endTimeInSec);
-
-        if (success) {
-            System.out.println("Kırpma başarılı!");
-        } else {
-            System.out.println("Kırpma başarısız.");
-        }
+        boolean ok = strategy.trim(in, out, startTimeInSec, endTimeInSec);
+        infolabel.setText(ok ? "Trim başarılı!" : "Trim başarısız.");
     }
+
 
     @FXML
     private void handleBatchTrim() {
         List<File> files = fileListView.getItems();
+        TrimMethod method = choiceMethod.getValue();
+        TrimStrategy strategy = strategies.get(method);
         if (files.isEmpty()) {
             infolabel.setText("Önce dosya seçmelisin!");
             return;
@@ -202,6 +223,7 @@ public class MainController {
         batchFacade.processAll(files, startTimeInSec, endTimeInSec, (file, success, output) -> {
             Platform.runLater(() -> {
                 done[0]++;
+                strategy.trim(file.getAbsolutePath(), output, startTimeInSec, endTimeInSec);
                 double progress = (double) done[0] / total;
                 progressBar.setProgress(progress);
                 String status = success ? "OK" : "ERR";

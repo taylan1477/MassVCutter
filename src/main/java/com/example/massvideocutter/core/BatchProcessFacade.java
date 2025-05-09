@@ -1,6 +1,5 @@
 package com.example.massvideocutter.core;
 
-
 import java.io.File;
 import java.util.List;
 

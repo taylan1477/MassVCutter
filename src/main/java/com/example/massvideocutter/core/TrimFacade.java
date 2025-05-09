@@ -6,7 +6,7 @@ public class TrimFacade {
     private final FFmpegWrapper ffmpegWrapper;
 
     public TrimFacade() {
-        this.ffmpegWrapper = new FFmpegWrapper(); // İleride bağımlılığı dışarıdan alabilirsin
+        this.ffmpegWrapper = new FFmpegWrapper();
     }
 
     public boolean trimVideo(String inputPath, String outputPath, double startSeconds, double endSeconds) {

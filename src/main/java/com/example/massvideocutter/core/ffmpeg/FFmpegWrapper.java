@@ -13,6 +13,7 @@ import java.util.logging.Logger;
 public class FFmpegWrapper {
     private static final Logger LOGGER = Logger.getLogger(FFmpegWrapper.class.getName());
     private static final String FFMPEG_PATH = "C:/Projeler/ffmpeg-7.1.1/bin/ffmpeg.exe";
+    public static String getExecutablePath() {return FFMPEG_PATH;}
 
     public boolean trimVideo(String inputPath, String outputPath, String startTime, String duration) {
         String inputExt = getFileExtension(inputPath).toLowerCase();

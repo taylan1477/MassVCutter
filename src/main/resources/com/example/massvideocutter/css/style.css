@@ -123,3 +123,57 @@
     -fx-accent: #FFA500;
     -fx-control-inner-background: #333333;
 }
+
+/* CHOICEBOX - KESME YÖNTEMİ SEÇİMİ (KOMPAKT) */
+#choiceMethod {
+    -fx-background-color: #252525;
+    -fx-border-color: #333333;
+    -fx-border-radius: 5px;
+    -fx-text-fill: #e0e0e0;
+    -fx-mark-color: #FFA500;
+    -fx-font-family: "Segoe UI", Arial;
+    -fx-padding: 1px 1px; /* Daha sıkı padding */
+    -fx-font-size: 14px; /* Font boyutu küçültüldü */
+    -fx-pref-width: 140px; /* Daha dar genişlik */
+}
+
+#choiceMethod .context-menu {
+    -fx-background-color: #252525;
+    -fx-border-color: #FFA500;
+    -fx-pref-width: 140px; /* Dropdown genişliği küçültüldü */
+}
+
+#choiceMethod .menu-item {
+    -fx-background-color: #252525;
+    -fx-text-fill: #e0e0e0;
+    -fx-padding: 5px 6px; /* Liste öğelerinde daha az padding */
+}
+
+#choiceMethod:hover {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #FFA500;
+}
+
+#choiceMethod .menu-item:hover {
+    -fx-background-color: linear-gradient(to right, #FFA50055, #FF8C0077);
+}
+
+#choiceMethod .label {
+    -fx-text-fill: #e0e0e0;
+    -fx-font-size: 12px; /* Metin boyutu küçültüldü */
+}
+
+#choiceMethod .menu-item:selected {
+    -fx-background-color: linear-gradient(to right, #FFA500, #FF8C00);
+    -fx-text-fill: #000000;
+}
+
+/* CHECK İŞARETİNİ KALDIRMA */
+#choiceMethod .menu-item .check {
+    -fx-opacity: 0; /* Tamamen görünmez yap */
+    -fx-padding: 0; /* Alanı sıfırla */
+}
+
+#choiceMethod .menu-item:selected .check {
+    -fx-background-color: transparent; /* Arkaplanı şeffaf yap */
+}
