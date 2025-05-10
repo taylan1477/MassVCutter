@@ -5,11 +5,6 @@ import com.example.massvideocutter.core.ffmpeg.FFmpegWrapper;
 import java.util.List;
 import java.util.Locale;
 
-// …
-
-
-
-
 public class AudioAnalyzerStrategy implements TrimStrategy {
     private final TrimFacade trimFacade;
     private final FFmpegWrapper ffmpegWrapper;
@@ -28,7 +23,6 @@ public class AudioAnalyzerStrategy implements TrimStrategy {
         this.silenceThreshold  = silenceThreshold;
         this.minSilenceDuration = minSilenceDuration;
     }
-
 
     @Override
     public boolean trim(String inputPath, String outputPath, double ignoredStart, double ignoredEnd) {

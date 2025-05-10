@@ -3,7 +3,9 @@ package com.example.massvideocutter.ui;
 import com.example.massvideocutter.core.*;
 
 import com.example.massvideocutter.core.ffmpeg.FFmpegWrapper;
+import com.example.massvideocutter.util.ProgressUpdater;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.media.Media;
@@ -195,12 +197,38 @@ public class MainController {
         }
 
         String in  = file.getAbsolutePath();
-        String out = in.replace(".", "_cut."); // uzantı koru
+        String out = in.replace(".", "_cut.");
         TrimMethod method = choiceMethod.getValue();
         TrimStrategy strategy = strategies.get(method);
 
-        boolean ok = strategy.trim(in, out, startTimeInSec, endTimeInSec);
-        infolabel.setText(ok ? "Trim başarılı!" : "Trim başarısız.");
+        // BELİRSİZ PROGRESS BAŞLAT
+        progressBar.setProgress(-1); // -> animasyon başlar
+        infolabel.setText("İşleniyor...");
+
+        Task<Boolean> task = new Task<>() {
+            @Override
+            protected Boolean call() throws Exception {
+                return strategy.trim(in, out, startTimeInSec, endTimeInSec);
+            }
+        };
+
+        progressBar.progressProperty().bind(task.progressProperty());
+
+        task.setOnSucceeded(e -> {
+            progressBar.progressProperty().unbind();
+            progressBar.setProgress(1);
+            boolean ok = task.getValue();
+            infolabel.setText(ok ? "Trim başarılı!" : "Trim başarısız.");
+        });
+
+        task.setOnFailed(e -> {
+            progressBar.progressProperty().unbind();
+            progressBar.setProgress(0);
+            infolabel.setText("HATA: " + task.getException().getMessage());
+            task.getException().printStackTrace();
+        });
+
+        new Thread(task).start();
     }
 
 
@@ -209,30 +237,27 @@ public class MainController {
         List<File> files = fileListView.getItems();
         TrimMethod method = choiceMethod.getValue();
         TrimStrategy strategy = strategies.get(method);
+
         if (files.isEmpty()) {
             infolabel.setText("Önce dosya seçmelisin!");
             return;
         }
 
         progressBar.setProgress(0);
-        inspector.getItems().clear();   // Önceki logları temizleyelim
+        inspector.getItems().clear();   // Önceki logları temizle
 
-        final int total = files.size();
-        final int[] done = {0};
-
-        batchFacade.processAll(files, startTimeInSec, endTimeInSec, (file, success, output) -> {
+        // 👉 ProgressUpdater yarat
+        ProgressUpdater updater = new ProgressUpdater(files.size(), (progress, file) -> {
             Platform.runLater(() -> {
-                done[0]++;
-                strategy.trim(file.getAbsolutePath(), output, startTimeInSec, endTimeInSec);
-                double progress = (double) done[0] / total;
                 progressBar.setProgress(progress);
-                String status = success ? "OK" : "ERR";
-                inspector.getItems().add(file.getName() + " → " + status);
-                if (done[0] == total) {
+                inspector.getItems().add(file.getName() + " → tamamlandı");
+                if (progress >= 1.0) {
                     infolabel.setText("Toplu kırpma tamamlandı!");
                 }
             });
         });
+        // ✅ processAll’a ProgressUpdater ver
+        batchFacade.processAll(files, startTimeInSec, endTimeInSec, updater);
     }
 
 }
