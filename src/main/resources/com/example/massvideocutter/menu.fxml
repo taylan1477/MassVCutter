@@ -10,6 +10,8 @@
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.Slider?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
@@ -21,6 +23,14 @@
       <VBox maxHeight="-Infinity" prefHeight="80.0" prefWidth="900.0" BorderPane.alignment="CENTER">
          <Slider fx:id="timelineSlider" />
          <HBox alignment="CENTER" prefHeight="100.0" prefWidth="813.0">
+            <ImageView fx:id="introimage" fitHeight="72.0" fitWidth="108.0" onMouseClicked="#handleIntroClick" pickOnBounds="true" preserveRatio="true">
+               <HBox.margin>
+                  <Insets />
+               </HBox.margin>
+               <image>
+                  <Image url="@images/defintro.png" />
+               </image>
+            </ImageView>
             <Button fx:id="btnSetStart" alignment="CENTER" mnemonicParsing="false" onAction="#handleSetStart" text="✂ Start">
                <font>
                   <Font size="16.0" />
@@ -61,6 +71,10 @@
                   <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
                </HBox.margin>
             </Button>
+            <ImageView fx:id="outroimage" fitHeight="72.0" fitWidth="108.0" onMouseClicked="#handleOutroClick" pickOnBounds="true" preserveRatio="true">
+               <image>
+                  <Image url="@images/defoutro.png" />
+               </image></ImageView>
          </HBox>
       </VBox>
    </bottom>
@@ -80,7 +94,7 @@
                <Font size="18.0" />
             </font>
          </Button>
-         <Button fx:id="btnExport2" alignment="CENTER" mnemonicParsing="false" onAction="#handleBatchTrim" prefHeight="100.0" prefWidth="140.0" text="HEPSİNİ KIRP !">
+         <Button fx:id="btnExport2" alignment="CENTER" mnemonicParsing="false" onAction="#handleBatchTrim" text="HEPSİNİ KIRP !">
             <font>
                <Font size="16.0" />
             </font>
@@ -109,8 +123,8 @@
       </VBox>
    </left>
    <top>
-      <VBox maxHeight="-Infinity" minHeight="-Infinity" prefHeight="50.0" prefWidth="1000.0" BorderPane.alignment="CENTER">
-         <MenuBar fx:id="menuBar" maxHeight="-Infinity" minHeight="-Infinity" prefHeight="30.0" prefWidth="1000.0">
+      <VBox maxHeight="-Infinity" prefHeight="40.0" prefWidth="900.0" BorderPane.alignment="CENTER">
+         <MenuBar fx:id="menuBar" maxHeight="-Infinity" minHeight="-Infinity" prefHeight="26.0" prefWidth="1000.0">
             <Menu mnemonicParsing="false" text="File">
                <MenuItem mnemonicParsing="false" text="Close" />
             </Menu>
@@ -121,7 +135,7 @@
                <MenuItem mnemonicParsing="false" text="About" />
             </Menu>
          </MenuBar>
-         <ProgressBar fx:id="progressBar" maxHeight="-Infinity" minHeight="-Infinity" prefHeight="20.0" prefWidth="1000.0" progress="0.0" />
+         <ProgressBar fx:id="progressBar" prefHeight="14.0" prefWidth="1000.0" progress="0.0" />
       </VBox>
    </top>
    <center>

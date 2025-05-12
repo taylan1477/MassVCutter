@@ -8,6 +8,7 @@ import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
@@ -16,9 +17,11 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import javafx.scene.control.Label;
 
+import javafx.scene.image.ImageView; // Doğru import
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 
 public class MainController {
@@ -33,6 +36,8 @@ public class MainController {
     private Map<TrimMethod, TrimStrategy> strategies;
     @FXML private MediaView mediaView;
     private MediaPlayer mediaPlayer;
+    @FXML private ImageView outroimage;
+    @FXML private ImageView introimage;
 
     TrimFacade trimFacade = new TrimFacade();
 
@@ -64,7 +69,6 @@ public class MainController {
             }
         });
 
-        // ... var olan init kodun ...
         // 1. ChoiceBox’a enum ekle
         choiceMethod.getItems().addAll(TrimMethod.values());
         choiceMethod.setValue(TrimMethod.MANUAL);
@@ -258,6 +262,34 @@ public class MainController {
         });
         // ✅ processAll’a ProgressUpdater ver
         batchFacade.processAll(files, startTimeInSec, endTimeInSec, updater);
+    }
+
+    @FXML
+    private void handleIntroClick() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Intro Resmi Seç");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("PNG Dosyaları", "*.png")
+        );
+        File selectedFile = fileChooser.showOpenDialog(introimage.getScene().getWindow());
+
+        if (selectedFile != null) {
+            introimage.setImage(new Image(selectedFile.toURI().toString()));
+        }
+    }
+
+    @FXML
+    private void handleOutroClick() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Outro Resmi Seç");
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("PNG Dosyaları", "*.png")
+        );
+        File selectedFile = fileChooser.showOpenDialog(outroimage.getScene().getWindow());
+
+        if (selectedFile != null) {
+            outroimage.setImage(new Image(selectedFile.toURI().toString()));
+        }
     }
 
 }

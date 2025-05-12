@@ -12,7 +12,7 @@
 /* MENÜ BAR */
 .menu-bar {
     -fx-background-color: #252525;
-    -fx-padding: 5px;
+    -fx-padding: 2px;
 }
 .menu-bar .menu {
     -fx-text-fill: #ffffff;
