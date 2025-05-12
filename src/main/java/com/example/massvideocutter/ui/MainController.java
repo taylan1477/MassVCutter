@@ -82,10 +82,12 @@ public class MainController {
                 TrimMethod.AUDIO_ANALYZER, new AudioAnalyzerStrategy(
                         trimFacade,
                         ffmpegWrapper,
+                        new AudioAnalyzer(),      // burayı ekledik
                         silenceThreshold,
                         minSilenceDuration
                 )
         );
+
 
         // Zaten slider init vs. burada kalabilir…
         timelineSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {

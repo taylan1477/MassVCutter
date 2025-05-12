@@ -8,18 +8,18 @@ import java.util.Locale;
 public class AudioAnalyzerStrategy implements TrimStrategy {
     private final TrimFacade trimFacade;
     private final FFmpegWrapper ffmpegWrapper;
-    private final AudioAnalyzer analyzer;
-    private final double silenceThreshold;   // dB cinsinden
-    private final double minSilenceDuration; // saniye cinsinden
-
+    private final AudioAnalyzer analyzer;            // artık constructor’dan
+    private final double silenceThreshold;
+    private final double minSilenceDuration;
 
     public AudioAnalyzerStrategy(TrimFacade trimFacade,
                                  FFmpegWrapper ffmpegWrapper,
+                                 AudioAnalyzer analyzer,           // inject
                                  double silenceThreshold,
                                  double minSilenceDuration) {
         this.trimFacade        = trimFacade;
         this.ffmpegWrapper     = ffmpegWrapper;
-        this.analyzer          = new AudioAnalyzer();
+        this.analyzer          = analyzer;
         this.silenceThreshold  = silenceThreshold;
         this.minSilenceDuration = minSilenceDuration;
     }
