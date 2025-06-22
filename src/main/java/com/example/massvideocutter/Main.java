@@ -17,7 +17,7 @@ public class Main extends Application {
         // Scene oluşturma
         Scene scene = new Scene(root);
 
-        // CSS dosyasını ekleme
+        // CSS dosyasını ekleme yeni pc ye geçildi
         scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/com/example/massvideocutter/css/style.css")).toExternalForm());
 
         primaryStage.setScene(scene);

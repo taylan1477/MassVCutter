@@ -8,7 +8,7 @@ import java.io.OutputStream;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
-class AudioAnalyzerStrategyNoTest {
+class AudioAnalyzerStrategyTest {
 
     // Helper: sahte Process
     static class DummyProcess extends Process {
@@ -60,7 +60,7 @@ class AudioAnalyzerStrategyNoTest {
     }
 
     @Test
-    void testTrim_successfulWithoutMockito() {
+    void testTrim_successful() {
         // set up a stub segment list: [0–5] ve [55–60]
         AudioAnalyzer.SilenceSegment seg1 = new AudioAnalyzer.SilenceSegment(0, 5);
         AudioAnalyzer.SilenceSegment seg2 = new AudioAnalyzer.SilenceSegment(55, 60);
@@ -82,7 +82,7 @@ class AudioAnalyzerStrategyNoTest {
     }
 
     @Test
-    void testTrim_noSilenceWithoutMockito() {
+    void testTrim_noSilence() {
         StubFFmpegWrapper ff = new StubFFmpegWrapper();
         StubTrimFacade tf = new StubTrimFacade(true);
         StubAnalyzer an = new StubAnalyzer(List.of());  // boş segment
