@@ -1,4 +1,8 @@
-/* TEMEL TEMA */
+/* ============================================
+   MASSVCUT TER - MODERN DARK THEME
+   ============================================ */
+
+/* BASE THEME */
 .root {
     -fx-base: #1e1e1e;
     -fx-background: #1a1a1a;
@@ -6,174 +10,668 @@
     -fx-text-fill: #e0e0e0;
     -fx-accent: #FFA500;
     -fx-focus-color: #FFB74D;
-    -fx-font-family: "Segoe UI", Arial;
+    -fx-font-family: "Segoe UI", "SF Pro Display", Arial, sans-serif;
 }
 
-/* MENÜ BAR */
+/* ============================================
+   MENU BAR
+   ============================================ */
 .menu-bar {
     -fx-background-color: #252525;
     -fx-padding: 2px;
 }
+
 .menu-bar .menu {
     -fx-text-fill: #ffffff;
 }
-.menu-bar .menu:hover, .menu-bar .menu:showing {
+
+.menu-bar .menu:hover,
+.menu-bar .menu:showing {
     -fx-background-color: #FFA500;
 }
+
 .menu-item {
     -fx-background-color: #252525;
 }
+
 .menu-item:hover {
     -fx-background-color: #FF8C00;
 }
 
-/* LİSTELER (SOL/SAĞ) */
+/* ============================================
+   FILE LIST (LEFT PANEL)
+   ============================================ */
 .list-view {
     -fx-background-color: #252525;
     -fx-border-color: #333333;
-    -fx-border-radius: 3px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
 }
+
 .list-cell {
     -fx-background-color: #252525;
     -fx-text-fill: #e0e0e0;
-    -fx-padding: 5px;
+    -fx-padding: 8px;
 }
+
 .list-cell:filled:selected {
     -fx-background-color: linear-gradient(to right, #FFA500, #FF8C00);
     -fx-text-fill: #000000;
+    -fx-background-radius: 4px;
 }
+
 .list-cell:filled:hover {
     -fx-background-color: #3a3a3a;
 }
 
-/* MEDIA VIEW (VİDEO ALANI) */
+/* ============================================
+   MEDIA VIEW (VIDEO AREA)
+   ============================================ */
 .media-view {
     -fx-background-color: #000000;
     -fx-border-color: #FFA500;
     -fx-border-width: 1px;
+    -fx-border-radius: 8px;
 }
 
-/* BUTONLAR İÇİN TAM DÜZELTME */
+/* ============================================
+   BUTTONS - MODERN STYLE
+   ============================================ */
 .button {
     -fx-background-color: #333333;
     -fx-text-fill: white;
-    -fx-background-radius: 5px;
-    -fx-border-radius: 5px;
+    -fx-background-radius: 8px;
+    -fx-border-radius: 8px;
     -fx-border-color: #444444;
     -fx-border-width: 1px;
     -fx-cursor: hand;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.2), 5, 0, 0, 1);
-    -fx-font-size: 14px; /* Sabit font boyutu */
-    -fx-padding: 8px 16px; /* Sabit padding */
-    -fx-min-width: 100px; /* Minimum genişlik */
-    -fx-min-height: 40px; /* Minimum yükseklik */
-    -fx-alignment: CENTER; /* Metni ortala */
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 8, 0, 0, 2);
+    -fx-alignment: CENTER;
 }
 
 .button:hover {
     -fx-background-color: #444444;
-    -fx-effect: dropshadow(three-pass-box, rgba(255,165,0,0.4), 8, 0, 0, 2);
-    -fx-font-size: 14px; /* Hover'da font boyutu sabit */
-    -fx-scale-x: 1.0; /* Ölçek değişimi yok */
-    -fx-scale-y: 1.0;
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.5), 12, 0, 0, 3);
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
 }
 
-/* ÖZEL BUTONLAR (Play/Export/Import) */
-#btnPlayPause, #btnExport, #btnImport, #btnExport2, #btnSetStart, #btnSetEnd {
+.button:pressed {
+    -fx-scale-x: 0.98;
+    -fx-scale-y: 0.98;
+}
+
+/* PRIMARY BUTTONS (Orange gradient) - Only for specific action buttons */
+#btnTrim,
+#btnImport,
+#btnTrimAll {
     -fx-background-color: linear-gradient(to bottom, #FFD700, #FFA500);
     -fx-text-fill: #000000;
     -fx-font-weight: bold;
-    -fx-font-size: 16px; /* Daha büyük font */
-    -fx-min-width: 120px;
-    -fx-min-height: 45px;
+    -fx-background-radius: 10px;
+    -fx-border-radius: 10px;
+    -fx-border-color: transparent;
 }
 
-/* FXML'DEKİ FONT BÜYÜKLÜKLERİNİ KORU */
-#btnPlayPause {
-    -fx-font-size: 16px; /* FXML'deki 16px değerini koru */
-}
-#btnExport, #btnImport, #btnExport2 {
-    -fx-font-size: 22px; /* FXML'deki 22px değerini koru */
-}
-
-#btnExport2 {
-    -fx-font-size: 12px; /* FXML'deki 14px değerini koru */
-}
-
-/* KESME BUTONLARI */
-#btnSetStart, #btnSetEnd {
+#btnTrim:hover,
+#btnImport:hover,
+#btnTrimAll:hover {
     -fx-background-color: linear-gradient(to bottom, #FFE44D, #FFB733);
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.7), 15, 0, 0, 4);
+}
+
+/* ============================================
+   METHOD SELECTOR - PILL STYLE TOGGLES
+   ============================================ */
+.method-selector {
+    -fx-background-color: #1a1a1a;
+    -fx-background-radius: 20px;
+    -fx-padding: 3px;
+}
+
+.method-toggle {
+    -fx-background-color: transparent;
+    -fx-text-fill: #888888;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 16px;
+    -fx-cursor: hand;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
+    -fx-min-width: 50px;
+}
+
+.method-toggle-left {
+    -fx-background-radius: 15px 0 0 15px;
+}
+
+.method-toggle-center {
+    -fx-background-radius: 0;
+}
+
+.method-toggle-right {
+    -fx-background-radius: 0 15px 15px 0;
+}
+
+.method-toggle:hover {
+    -fx-background-color: #333333;
+    -fx-text-fill: #cccccc;
+}
+
+.method-toggle:selected {
+    -fx-background-color: linear-gradient(to bottom, #FFA500, #FF8C00);
     -fx-text-fill: #000000;
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.4), 8, 0, 0, 2);
+}
+
+.method-toggle-left:selected {
+    -fx-background-radius: 15px 0 0 15px;
+}
+
+.method-toggle-center:selected {
+    -fx-background-radius: 0;
+}
+
+.method-toggle-right:selected {
+    -fx-background-radius: 0 15px 15px 0;
+}
+
+/* ============================================
+   TIMELINE SLIDER
+   ============================================ */
+.slider {
+    -fx-padding: 10px 0;
+}
+
+.slider .track {
+    -fx-background-color: #333333;
+    -fx-background-radius: 5px;
+    -fx-pref-height: 8px;
+}
+
+.slider .thumb {
+    -fx-background-color: linear-gradient(to bottom, #FFD700, #FFA500);
+    -fx-background-radius: 10px;
+    -fx-pref-width: 18px;
+    -fx-pref-height: 18px;
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.6), 8, 0, 0, 2);
+}
+
+.slider .thumb:hover {
+    -fx-background-color: linear-gradient(to bottom, #FFE44D, #FFB733);
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.8), 12, 0, 0, 3);
+}
+
+/* ============================================
+   PROGRESS BAR
+   ============================================ */
+.progress-bar {
+    -fx-accent: linear-gradient(to right, #FFA500, #FF6B00);
+    -fx-control-inner-background: #333333;
+    -fx-background-radius: 0;
+    -fx-pref-height: 8px;
+}
+
+.progress-bar .bar {
+    -fx-background-color: linear-gradient(to right, #FFA500, #FF6B00);
+    -fx-background-radius: 0;
+}
+
+.progress-bar .track {
+    -fx-background-color: #333333;
+    -fx-background-radius: 0;
+}
+
+/* Indeterminate animation */
+.progress-bar:indeterminate .bar {
+    -fx-background-color: linear-gradient(to right,
+            transparent,
+            #FFA500 20%,
+            #FF6B00 50%,
+            #FFA500 80%,
+            transparent);
+}
+
+/* ============================================
+   INFO LABEL
+   ============================================ */
+#infoLabel {
+    -fx-text-fill: #cccccc;
+    -fx-font-size: 12px;
+    -fx-padding: 10px;
+    -fx-background-color: #252525;
+    -fx-background-radius: 8px;
+    -fx-border-color: #333333;
+    -fx-border-radius: 8px;
+}
+
+/* ============================================
+   INSPECTOR LIST (RIGHT PANEL)
+   ============================================ */
+#inspector {
+    -fx-background-color: #1e1e1e;
+    -fx-border-color: #333333;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+}
+
+#inspector .list-cell {
+    -fx-font-size: 11px;
+    -fx-text-fill: #aaaaaa;
+    -fx-padding: 4px 8px;
+}
+
+/* ============================================
+   SCROLL BARS
+   ============================================ */
+.scroll-bar {
+    -fx-background-color: #1e1e1e;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #444444;
+    -fx-background-radius: 5px;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #555555;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar .increment-arrow,
+.scroll-bar .decrement-arrow {
+    -fx-background-color: #555555;
+}
+
+/* ============================================
+   INTRO/OUTRO IMAGE PANELS
+   ============================================ */
+#introImage,
+#outroImage {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 8, 0, 0, 2);
+    -fx-cursor: hand;
+}
+
+#introImage:hover,
+#outroImage:hover {
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.6), 12, 0, 0, 3);
+}
+
+/* ============================================
+   TOOLTIPS
+   ============================================ */
+.tooltip {
+    -fx-background-color: #333333;
+    -fx-text-fill: #ffffff;
+    -fx-border-color: #FFA500;
+    -fx-border-width: 1px;
+    -fx-background-radius: 6px;
+    -fx-border-radius: 6px;
+    -fx-padding: 8px;
+    -fx-font-size: 12px;
+}
+
+/* ============================================
+   ANIMATIONS & EFFECTS
+   ============================================ */
+
+/* Glow effect for focused elements */
+.button:focused,
+.slider:focused .thumb,
+.list-view:focused {
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.4), 10, 0, 0, 0);
+}
+
+/* Drag and drop highlight */
+.list-view.drag-over {
+    -fx-border-color: #FFA500;
+    -fx-border-width: 2px;
+    -fx-border-style: dashed;
+}
+
+/* ============================================
+   VERTICAL METHOD SELECTOR (NEW)
+   ============================================ */
+.method-selector-vertical {
+    -fx-background-color: #1e1e1e;
+    -fx-background-radius: 10px;
+    -fx-padding: 5px;
+}
+
+.method-toggle-vertical {
+    -fx-background-color: #2a2a2a;
+    -fx-text-fill: #888888;
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-padding: 12px 10px;
+    -fx-cursor: hand;
+    -fx-background-radius: 8px;
+    -fx-border-color: transparent;
+    -fx-alignment: CENTER-LEFT;
+}
+
+.method-toggle-vertical:hover {
+    -fx-background-color: #333333;
+    -fx-text-fill: #cccccc;
+}
+
+.method-toggle-vertical:selected {
+    -fx-background-color: linear-gradient(to right, #FFA500, #FF8C00);
+    -fx-text-fill: #000000;
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.5), 10, 0, 0, 2);
+}
+
+/* ============================================
+   COMPACT PLAYBACK CONTROLS (NEW)
+   ============================================ */
+.playback-controls {
+    -fx-background-color: #252525;
+    -fx-background-radius: 20px;
+    -fx-padding: 4px 8px;
+}
+
+.playback-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #888888;
+    -fx-font-size: 14px;
+    -fx-padding: 6px 10px;
+    -fx-cursor: hand;
+    -fx-background-radius: 15px;
+    -fx-min-width: 35px;
+    -fx-min-height: 35px;
+}
+
+.playback-button:hover {
+    -fx-background-color: #333333;
+    -fx-text-fill: #ffffff;
+}
+
+.playback-button-main {
+    -fx-background-color: linear-gradient(to bottom, #FFD700, #FFA500);
+    -fx-text-fill: #000000;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 14px;
+    -fx-cursor: hand;
+    -fx-background-radius: 20px;
+    -fx-min-width: 45px;
+    -fx-min-height: 45px;
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.4), 8, 0, 0, 2);
+}
+
+.playback-button-main:hover {
+    -fx-background-color: linear-gradient(to bottom, #FFE44D, #FFB733);
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.7), 12, 0, 0, 3);
+}
+
+/* TINY BUTTONS (NEW) */
+.playback-button-tiny {
+    -fx-background-color: transparent;
+    -fx-text-fill: #888888;
+    -fx-font-size: 11px;
+    -fx-padding: 4px 6px;
+    -fx-cursor: hand;
+    -fx-background-radius: 12px;
+    -fx-min-width: 26px;
+    -fx-min-height: 26px;
+}
+
+.playback-button-tiny:hover {
+    -fx-background-color: #333333;
+    -fx-text-fill: #ffffff;
+}
+
+.playback-button-main-small {
+    -fx-background-color: linear-gradient(to bottom, #FFD700, #FFA500);
+    -fx-text-fill: #000000;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 5px 8px;
+    -fx-cursor: hand;
+    -fx-background-radius: 16px;
+    -fx-min-width: 32px;
+    -fx-min-height: 32px;
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.3), 6, 0, 0, 1);
+}
+
+.playback-button-main-small:hover {
+    -fx-background-color: linear-gradient(to bottom, #FFE44D, #FFB733);
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.5), 8, 0, 0, 2);
+}
+
+.marker-button-tiny {
+    -fx-background-color: #FFA500;
+    -fx-text-fill: #000000;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 3px 5px;
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+    -fx-min-width: 28px;
+    -fx-min-height: 28px;
+}
+
+.marker-button-tiny:hover {
+    -fx-background-color: #FFB733;
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.5), 6, 0, 0, 1);
+}
+
+/* MEDIUM BUTTONS */
+.playback-button-medium {
+    -fx-background-color: #333333;
+    -fx-text-fill: #cccccc;
+    -fx-font-size: 14px;
+    -fx-padding: 6px 10px;
+    -fx-cursor: hand;
+    -fx-background-radius: 18px;
+    -fx-min-width: 36px;
+    -fx-min-height: 36px;
+}
+
+.playback-button-medium:hover {
+    -fx-background-color: #444444;
+    -fx-text-fill: #ffffff;
+}
+
+.playback-button-main-medium {
+    -fx-background-color: linear-gradient(to bottom, #FFD700, #FFA500);
+    -fx-text-fill: #000000;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 12px;
+    -fx-cursor: hand;
+    -fx-background-radius: 23px;
+    -fx-min-width: 46px;
+    -fx-min-height: 46px;
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.4), 8, 0, 0, 2);
+}
+
+.playback-button-main-medium:hover {
+    -fx-background-color: linear-gradient(to bottom, #FFE44D, #FFB733);
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.6), 12, 0, 0, 3);
+}
+
+.marker-button-medium {
+    -fx-background-color: linear-gradient(to bottom, #FFD700, #FFA500);
+    -fx-text-fill: #000000;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 6px 10px;
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+    -fx-min-width: 38px;
+    -fx-min-height: 38px;
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.3), 6, 0, 0, 1);
+}
+
+.marker-button-medium:hover {
+    -fx-background-color: linear-gradient(to bottom, #FFE44D, #FFB733);
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.5), 8, 0, 0, 2);
+}
+
+/* ============================================
+   MARKER BUTTONS (SET START/END)
+   ============================================ */
+.marker-button {
+    -fx-background-color: #333333;
+    -fx-text-fill: #FFA500;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 12px;
+    -fx-background-radius: 6px;
+    -fx-border-color: #FFA500;
+    -fx-border-width: 1px;
+    -fx-border-radius: 6px;
+    -fx-cursor: hand;
+}
+
+.marker-button:hover {
+    -fx-background-color: #FFA500;
+    -fx-text-fill: #000000;
+}
+
+/* ============================================
+   SECTION LABELS (NEW)
+   ============================================ */
+.section-label {
+    -fx-text-fill: #666666;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-padding: 5px 0 2px 0;
+}
+
+/* ============================================
+   REFERENCE IMAGES (INTRO/OUTRO)
+   ============================================ */
+.reference-image {
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 6, 0, 0, 2);
+    -fx-cursor: hand;
+}
+
+.reference-image:hover {
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.7), 10, 0, 0, 3);
+}
+
+/* ============================================
+   INFO LABEL (IMPROVED)
+   ============================================ */
+.info-label {
+    -fx-text-fill: #aaaaaa;
+    -fx-font-size: 11px;
+    -fx-padding: 8px;
+    -fx-background-color: #252525;
+    -fx-background-radius: 6px;
+    -fx-border-color: #333333;
+    -fx-border-radius: 6px;
+}
+
+/* ============================================
+   TIMELINE WITH MARKERS (NEW)
+   ============================================ */
+.timeline-track {
+    -fx-background-color: #333333;
+    -fx-background-radius: 4px;
+}
+
+#timelineContainer {
+    -fx-cursor: hand;
+}
+
+/* Waveform Container */
+.waveform-container {
+    -fx-background-color: #1a1a1a;
+    -fx-background-radius: 4px;
+    -fx-border-color: #333333;
+    -fx-border-width: 1px;
+    -fx-border-radius: 4px;
+}
+
+/* Time Labels */
+.time-label {
+    -fx-text-fill: #FFA500;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-padding: 4px 8px;
+    -fx-background-color: #252525;
+    -fx-background-radius: 4px;
+}
+
+.time-label-current {
+    -fx-text-fill: #ffffff;
+    -fx-font-size: 13px;
     -fx-font-weight: bold;
 }
 
-/* SLIDER */
-.slider {
-    -fx-control-inner-background: #333333;
-}
-.slider .thumb {
+/* ============================================
+   SMALL MARKER BUTTONS (NEW)
+   ============================================ */
+.marker-button-small {
     -fx-background-color: #FFA500;
-}
-.slider .track {
-    -fx-background-color: #444444;
-}
-
-/* PROGRESS BAR */
-.progress-bar {
-    -fx-accent: #FFA500;
-    -fx-control-inner-background: #333333;
-}
-
-/* CHOICEBOX - KESME YÖNTEMİ SEÇİMİ (KOMPAKT) */
-#choiceMethod {
-    -fx-background-color: #252525;
-    -fx-border-color: #333333;
-    -fx-border-radius: 5px;
-    -fx-text-fill: #e0e0e0;
-    -fx-mark-color: #FFA500;
-    -fx-font-family: "Segoe UI", Arial;
-    -fx-padding: 1px 1px; /* Daha sıkı padding */
-    -fx-font-size: 14px; /* Font boyutu küçültüldü */
-    -fx-pref-width: 140px; /* Daha dar genişlik */
-}
-
-#choiceMethod .context-menu {
-    -fx-background-color: #252525;
-    -fx-border-color: #FFA500;
-    -fx-pref-width: 140px; /* Dropdown genişliği küçültüldü */
-}
-
-#choiceMethod .menu-item {
-    -fx-background-color: #252525;
-    -fx-text-fill: #e0e0e0;
-    -fx-padding: 5px 6px; /* Liste öğelerinde daha az padding */
-}
-
-#choiceMethod:hover {
-    -fx-background-color: #2d2d2d;
-    -fx-border-color: #FFA500;
-}
-
-#choiceMethod .menu-item:hover {
-    -fx-background-color: linear-gradient(to right, #FFA50055, #FF8C0077);
-}
-
-#choiceMethod .label {
-    -fx-text-fill: #e0e0e0;
-    -fx-font-size: 12px; /* Metin boyutu küçültüldü */
-}
-
-#choiceMethod .menu-item:selected {
-    -fx-background-color: linear-gradient(to right, #FFA500, #FF8C00);
     -fx-text-fill: #000000;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 4px 8px;
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+    -fx-min-width: 30px;
+    -fx-min-height: 25px;
 }
 
-/* CHECK İŞARETİNİ KALDIRMA */
-#choiceMethod .menu-item .check {
-    -fx-opacity: 0; /* Tamamen görünmez yap */
-    -fx-padding: 0; /* Alanı sıfırla */
+.marker-button-small:hover {
+    -fx-background-color: #FFB733;
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.6), 8, 0, 0, 2);
 }
 
-#choiceMethod .menu-item:selected .check {
-    -fx-background-color: transparent; /* Arkaplanı şeffaf yap */
+.marker-label {
+    -fx-text-fill: #888888;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+}
+
+/* ============================================
+   IMAGE LABELS (NEW)
+   ============================================ */
+.image-label {
+    -fx-text-fill: #666666;
+    -fx-font-size: 9px;
+    -fx-font-weight: bold;
+}
+
+/* ============================================
+   ACTION BUTTONS (RIGHT PANEL)
+   ============================================ */
+.action-button {
+    -fx-background-color: linear-gradient(to bottom, #FFD700, #FFA500);
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+    -fx-padding: 10px 15px;
+    -fx-background-radius: 8px;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.4), 8, 0, 0, 2);
+}
+
+.action-button:hover {
+    -fx-background-color: linear-gradient(to bottom, #FFE44D, #FFB733);
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.7), 12, 0, 0, 3);
+}
+
+.action-button-secondary {
+    -fx-background-color: #333333;
+    -fx-text-fill: #FFA500;
+    -fx-font-weight: bold;
+    -fx-padding: 8px 12px;
+    -fx-background-radius: 8px;
+    -fx-border-color: #FFA500;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-cursor: hand;
+}
+
+.action-button-secondary:hover {
+    -fx-background-color: #FFA500;
+    -fx-text-fill: #000000;
 }

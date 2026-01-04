@@ -1,109 +1,119 @@
-# Mass Video Cutter Tool (Toplu Video Kırpma Aracı)
+# Mass Video Cutter Tool
 
-## 1. PROJENİN AMACI
-Bu proje, film, dizi ve anime arşivlerini düzenleyerek zamandan ve depolamadan tasaaruf etmeyi amaçlar.
-Intro, outro ve gereksiz kısımların otomatik tespiti ve kırpılmasını sağlamayı amaçlıyor.
-JavaFX ile arayüz sağlanacak, videolar FFmpeg ile işlenecek ve farklı algoritmalarla otomatik tespit yapılacaktır.
+> **Batch video trimming with intelligent intro/outro detection**
+
+A JavaFX-based desktop application for automatically detecting and removing intros, outros, and unnecessary segments from video archives. Perfect for anime series, TV shows, and movie collections.
+
+## ✨ Features
+
+### Currently Implemented
+- **Manual Trim** - Set custom start/end points with draggable timeline markers
+- **Audio Analysis** - Automatic silence detection for intro/outro boundaries
+- **Batch Processing** - Trim multiple videos with the same settings
+- **Drag & Drop** - Import videos by dragging files into the app
+- **Waveform Visualization** - See audio levels on the timeline
+- **Modern Dark UI** - Clean interface with orange accent theme
+
+### In Development
+- **Scene Detection** - AI-based scene change detection
+- **Reference Image Matching** - Match intro/outro by image similarity
+
+## 🖼️ UI Components
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  File  Edit  Help                                    [Progress] │
+├────────┬─────────────────────────────────────────────┬──────────┤
+│        │                                             │          │
+│  FILE  │          VIDEO PLAYER                       │  INFO    │
+│  LIST  │                                             │          │
+│        ├─────────────────────────────────────────────┤  LOG     │
+│        │  [S]▂▄█▃▅█▂▄██▃▅█▂▄█▃▅█▂▄██▃▅█▂▄█[E]      │          │
+│  TRIM  │        START: 00:00  01:32 / 25:32  END    │ [TRIM]   │
+│ METHOD │  [INTRO] [✂] [⏪▶⏩] [✂] [OUTRO]            │[TRIM ALL]│
+└────────┴─────────────────────────────────────────────┴──────────┘
+```
+
+## 📦 Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| UI Framework | JavaFX 23 |
+| Video Processing | FFmpeg |
+| Build Tool | Maven |
+| Language | Java 23 |
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Java 23+ with JavaFX
+- FFmpeg installed and accessible
+
+### Run from IDE
+1. Open project in IntelliJ IDEA
+2. Run `Main.java`
+
+### Run from Terminal
+```bash
+mvn javafx:run
+```
+
+## 📁 Project Structure
+
+```
+src/main/java/com/example/massvideocutter/
+├── Main.java                    # App entry point
+├── core/
+│   ├── TrimFacade.java         # FFmpeg trim orchestration
+│   ├── TrimStrategy.java       # Strategy interface
+│   ├── ManualTrimStrategy.java # User-defined trim points
+│   ├── AudioAnalyzerStrategy.java # Silence-based trim
+│   ├── AudioAnalyzer.java      # FFmpeg silence detection
+│   ├── BatchProcessFacade.java # Multi-file processing
+│   ├── TaskManager.java        # Thread pool management
+│   └── ffmpeg/
+│       ├── FFmpegWrapper.java  # FFmpeg command execution
+│       └── FFmpegCommandFactory.java
+└── ui/
+    ├── MainController.java     # UI logic & bindings
+    ├── TimelineControl.java    # Custom timeline + waveform
+    └── WaveformView.java       # Audio visualization
+```
+
+## 🎯 Roadmap
+
+### Phase 1 ✅
+- [x] English localization
+- [x] Drag & drop file import
+- [x] Modern CSS styling
+- [x] Pill-style method selector
+
+### Phase 2 ✅
+- [x] Draggable timeline markers (START/END)
+- [x] Waveform visualization with FFmpeg
+- [x] Dynamic UI (show/hide intro/outro slots)
+
+### Phase 3 🚧
+- [ ] Scene detection integration
+- [ ] Reference image matching
+- [ ] Settings/preferences panel
+
+### Future
+- [ ] Multi-language support (TR, EN, JP)
+- [ ] GPU-accelerated FFmpeg
+- [ ] Cloud sync for trim presets
+
+## 💾 Storage Savings Example
+
+| Series | Episodes | Intro+Outro | Total Saved |
+|--------|----------|-------------|-------------|
+| One Piece | 1000+ | ~3 min/ep | **~50 hours / 90+ GB** |
+| Naruto | 720 | ~2.5 min/ep | **~30 hours / 50+ GB** |
+
+## 📄 License
+
+MIT License - Free to use and modify.
+
 ---
 
-## 2. ANA ÖZELLİKLER
-✅ YAPILACAKLAR:
-1. **Otomatik Intro/Outro Algılama**
-   - Manuel Zaman Aralığı Belirleme
-   - Ses Enerjisi Analizi
-   - Görüntü Analizi (Gerekirse)
-   - JLibrosa ile Müzik Analizi (Gerekirse)
-   - PySceneDetect ile Sahne Geçiş Analizi (Gerekirse)
-
-2. **Kullanıcı Kontrollü Video Kırpma**
-   - Kullanıcı, videonun **thumbnail önizlemesi üzerinden başlangıç ve bitiş noktalarını işaretleyebilecek**.
-   - İşaretlenen kesim bilgileri **.txt formatında saklanacak** ve daha sonra kullanılabilecek.
-
-3. **Gerçek Zamanlı İşlem Takibi**
-   - Video işlenirken ilerleme çubuğu göstergesi (Progress Bar) olacak.
-   - Çoklu dosya işlemleri **Thread Pool** ile yönetilecek.
-
-4. **Sürükle-Bırak ile Dosya Seçimi**
-   - Kullanıcı **birden fazla video dosyasını** sürükleyerek programa ekleyebilecek.
-
-5. **FFmpeg CLI Entegrasyonu**
-   - Videoların kırpılması **FFmpeg** ile gerçekleştirilecek.
----
-
-## 3. TEKNİK YAPI
-├───Core
-│   ├── **FFmpegWrapper** (Facade Pattern) - FFmpeg komutlarını sarmalar.
-│   ├── **AudioAnalyzer** (Ses Enerjisi Hesaplama)
-│   ├── **SceneDetector** (PySceneDetect ile sahne geçiş analizi)
-│   ├── **SpectralAnalyzer** (JLibrosa ile frekans analizi)
-│   ├── **TaskManager** (Thread Pool ile çoklu işlem yönetimi)
-│   └── **ManualTrimHandler** (Manuel kesim noktalarını yönetir)
-├───UI
-│   ├── **MainController** (Observer Pattern)
-│   ├── **ThumbnailGenerator** (FFmpeg + JavaFX ImageView)
-│   ├── **VideoPreview** (JavaFX içinde video önizleme)
-│   ├── **DragDropHandler** (Dosya sürükleme desteği)
-│   ├── **CutPointSelector** (Kullanıcının işaretlediği noktaları yönetir)
-│   └── **FileExporter** (Kesim bilgilerini .txt formatında kaydeder)
-└───Util
-    ├── **ProgressUpdater** (Runnable + Observer ile ilerleme çubuğu yönetimi)
-    ├── **FFmpegBinaryLoader** (Platforma özel FFmpeg yükleme)
-    └── **DataSerializer** (.txt formatında veri kaydetme/yükleme)
----
-
-## 4. KULLANILAN DESIGN PATTERNLER
-1. **FACADE**: FFmpeg komutlarını sarmalayan sınıf.
-2. **OBSERVER**: Progress bar ve UI güncellemeleri için.
-3. **FACTORY**: FFmpeg komut builder’ı (MP4/MKV gibi farklı formatlar için).
-4. **STRATEGY**: Farklı intro/outro tespit yöntemleri arasında geçiş yapılmasını sağlar.
----
-
-## 5. OTOMATİK TESPİT YÖNTEMLERİ
-### ✅ 1. SES ENERJİSİ ANALİZİ (ÖNCELİKLİ)
-- Ses seviyelerini analiz ederek belirli bir müzik veya yüksek sesli intro/outro bölümlerini algılar.
-- **Avantajları:** Hızlı ve basit.
-- **Dezavantajları:** Sessiz veya düşük sesli introlarda başarısız olabilir.
-
-### ✅ 2. MANUEL ZAMAN ARALIĞI BELİRLEME (ÖNCELİKLİ)
-- Kullanıcı, videonun belirli bir kısmını işaretleyerek intro/outro noktalarını manuel belirleyebilir.
-- **Avantajları:** En güvenilir yöntem.
-- **Dezavantajları:** Kullanıcıdan manuel giriş gerektirir.
-
-### 🔄 3. GÖRÜNTÜ ANALİZİ (OPSİYONEL)
-- Siyah ekran, büyük metinler veya belirli sahne geçişlerini tespit ederek intro/outro bölgelerini bulur.
-- **Avantajları:** Netflix gibi sistemlere daha yakın bir yaklaşım sağlar.
-- **Dezavantajları:** Hesaplama açısından ağırdır.
-
-### 🔄 4. JLIBROSA İLE Müzik ANALİZİ (OPSİYONEL)
-- Ses dosyasını frekans bileşenlerine ayırarak belirli müzikleri tanımlamak için kullanılır.
-- **Avantajları:** Daha karmaşık analiz yapılmasını sağlar.
-- **Dezavantajları:** Uygulaması zor ve işlem gücü gerektirir.
-
-### 🔄 5. PYSCENEDETECT İLE SAHNE GEÇİŞ ANALİZİ (OPSİYONEL)
-- PySceneDetect kullanılarak keskin sahne değişiklikleri algılanır.
-- **Avantajları:** Özellikle büyük metin geçişleri olan One Piece gibi içeriklerde etkili olabilir.
-- **Dezavantajları:** Python entegrasyonu gerektirir.
----
-
-## 6. ÇALIŞMA SIRASI
-✅ **1. Aşama (Temel İşlevler)**
-   - [ ] **Ses Analizi** ile otomatik tespit
-   - [ ] **Manuel Kesim** noktaları işaretleme
-   - [ ] **FFmpeg ile kırpma ve dışa aktarma**
-   - [ ] **Kullanıcı dostu UI tasarımı**
-
-🔄 **2. Aşama (Gelişmiş Algoritmalar)**
-   - [ ] **Görüntü Analizi** ekleme
-   - [ ] **JLibrosa spektrum analizi** ekleme
-   - [ ] **PySceneDetect entegrasyonu**
-   - [ ] **Toplu işlem hız optimizasyonları**
----
-
-
-
-## 7. YAZILIM GELİŞTİRME METODU
-- XP’yi tercih etmemizin nedeni, küçük bir ekip olarak yoğun kod geliştirme odaklı çalışmamızdır. Scrum daha çok süreç yönetimine odaklanırken,
-  XP doğrudan kod kalitesini arttıran teknik pratiklerle donatılmıştır ve bu bizim ihtiyaçlarımıza daha uygundur.
-
-  2 kişiyiz ve yoğun kod odaklı çalışıyoruz bu durumda Scrum'ın süreç yönetimine odaklanan pratikleri yerine 
-  XP'nin doğrudan kod kalitesini arttıran teknik pratiklerini tercih ediyoruz.
+Made with ☕ and JavaFX

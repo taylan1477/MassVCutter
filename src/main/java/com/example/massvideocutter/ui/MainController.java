@@ -9,51 +9,94 @@ import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.TransferMode;
+import javafx.scene.layout.StackPane;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.util.Duration;
-import javafx.scene.control.Label;
 
-import javafx.scene.image.ImageView; // Doğru import
 import java.io.File;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-
 
 public class MainController {
 
-    @FXML private Label infolabel;
-    @FXML private ListView<File> fileListView;  // String -> File
+    // UI Components
+    @FXML private Label infoLabel;
+    @FXML private ListView<File> fileListView;
     @FXML private ListView<String> inspector;
     @FXML private MenuBar menuBar;
     @FXML private ProgressBar progressBar;
-    @FXML private Slider timelineSlider;
-    @FXML private ChoiceBox<TrimMethod> choiceMethod;
-    private Map<TrimMethod, TrimStrategy> strategies;
     @FXML private MediaView mediaView;
+    @FXML private ImageView introImage;
+    @FXML private ImageView outroImage;
+
+    // Timeline container (combined with waveform)
+    @FXML private StackPane timelineContainer;
+
+    // Time labels
+    @FXML private Label startTimeLabel;
+    @FXML private Label currentTimeLabel;
+    @FXML private Label endTimeLabel;
+
+    // Method selector toggle buttons
+    @FXML private ToggleButton btnManual;
+    @FXML private ToggleButton btnAudio;
+    @FXML private ToggleButton btnScene;
+    @FXML private ToggleGroup methodGroup;
+
+    // Core components
     private MediaPlayer mediaPlayer;
-    @FXML private ImageView outroimage;
-    @FXML private ImageView introimage;
-
-    TrimFacade trimFacade = new TrimFacade();
-
-    private boolean isSliderBeingDragged = false;
-    private double startTimeInSec = 0;
-    private double endTimeInSec = 0;
+    private TrimFacade trimFacade = new TrimFacade();
     private BatchProcessFacade batchFacade;
+    private Map<TrimMethod, TrimStrategy> strategies;
+
+    // Custom timeline control (with integrated waveform)
+    private TimelineControl timelineControl;
+
+    // State
+    private TrimMethod currentMethod = TrimMethod.MANUAL;
+
+    // Supported video extensions
+    private static final List<String> VIDEO_EXTENSIONS = List.of(
+            ".mp4", ".mkv", ".ts", ".avi", ".mov", ".webm", ".flv"
+    );
 
     @FXML
     public void initialize() {
-
+        // Initialize core components
         TaskManager taskManager = new TaskManager();
-        this.trimFacade   = new TrimFacade();
-        this.batchFacade  = new BatchProcessFacade(trimFacade, taskManager);
+        this.trimFacade = new TrimFacade();
+        this.batchFacade = new BatchProcessFacade(trimFacade, taskManager);
 
-        // CellFactory: hücrede sadece dosya adı göster
+        // Initialize strategies
+        double silenceThreshold = -30.0;
+        double minSilenceDuration = 5.0;
+        FFmpegWrapper ffmpegWrapper = new FFmpegWrapper();
+
+        strategies = Map.of(
+                TrimMethod.MANUAL, new ManualTrimStrategy(trimFacade),
+                TrimMethod.AUDIO_ANALYZER, new AudioAnalyzerStrategy(
+                        trimFacade,
+                        ffmpegWrapper,
+                        new AudioAnalyzer(),
+                        silenceThreshold,
+                        minSilenceDuration
+                )
+        );
+
+        // Setup components
+        setupFileListView();
+        setupDragAndDrop();
+        setupMethodSelector();
+        setupTimelineControl();
+    }
+
+    private void setupFileListView() {
         fileListView.setCellFactory(param -> new ListCell<File>() {
             @Override
             protected void updateItem(File item, boolean empty) {
@@ -62,44 +105,105 @@ public class MainController {
             }
         });
 
-        // Seçilen dosyayı oynatma
         fileListView.getSelectionModel().selectedItemProperty().addListener((obs, oldFile, newFile) -> {
             if (newFile != null) {
                 playVideo(newFile);
             }
         });
+    }
 
-        // 1. ChoiceBox’a enum ekle
-        choiceMethod.getItems().addAll(TrimMethod.values());
-        choiceMethod.setValue(TrimMethod.MANUAL);
+    private void setupDragAndDrop() {
+        fileListView.setOnDragOver(event -> {
+            if (event.getGestureSource() != fileListView && event.getDragboard().hasFiles()) {
+                event.acceptTransferModes(TransferMode.COPY);
+            }
+            event.consume();
+        });
 
-        double silenceThreshold   = -30.0;  // örnek dB eşiği
-        double minSilenceDuration = 5.0;    // örnek saniye cinsinden
-        FFmpegWrapper ffmpegWrapper = new FFmpegWrapper();
-
-        strategies = Map.of(
-                TrimMethod.MANUAL, new ManualTrimStrategy(trimFacade),
-                TrimMethod.AUDIO_ANALYZER, new AudioAnalyzerStrategy(
-                        trimFacade,
-                        ffmpegWrapper,
-                        new AudioAnalyzer(),      // burayı ekledik
-                        silenceThreshold,
-                        minSilenceDuration
-                )
-        );
-
-
-        // Zaten slider init vs. burada kalabilir…
-        timelineSlider.valueChangingProperty().addListener((obs, wasChanging, isChanging) -> {
-            isSliderBeingDragged = isChanging;
-            if (!isChanging && mediaPlayer != null) {
-                mediaPlayer.seek(Duration.seconds(timelineSlider.getValue()));
+        fileListView.setOnDragEntered(event -> {
+            if (event.getDragboard().hasFiles()) {
+                fileListView.setStyle("-fx-border-color: #FFA500; -fx-border-width: 2px; -fx-border-style: dashed;");
             }
         });
 
-        timelineSlider.setOnMouseReleased(event -> {
+        fileListView.setOnDragExited(event -> fileListView.setStyle(""));
+
+        fileListView.setOnDragDropped(event -> {
+            var db = event.getDragboard();
+            boolean success = false;
+
+            if (db.hasFiles()) {
+                for (File file : db.getFiles()) {
+                    if (isVideoFile(file) && !fileListView.getItems().contains(file)) {
+                        fileListView.getItems().add(file);
+                        success = true;
+                    }
+                }
+
+                if (!fileListView.getItems().isEmpty() && fileListView.getSelectionModel().isEmpty()) {
+                    fileListView.getSelectionModel().select(0);
+                }
+
+                if (success) {
+                    infoLabel.setText(db.getFiles().size() + " file(s) added");
+                }
+            }
+
+            event.setDropCompleted(success);
+            event.consume();
+        });
+    }
+
+    private boolean isVideoFile(File file) {
+        String name = file.getName().toLowerCase();
+        return VIDEO_EXTENSIONS.stream().anyMatch(name::endsWith);
+    }
+
+    private void setupMethodSelector() {
+        btnManual.setSelected(true);
+        updateUIForMethod(TrimMethod.MANUAL);
+    }
+
+    @FXML
+    private void handleMethodChange() {
+        if (btnManual.isSelected()) {
+            currentMethod = TrimMethod.MANUAL;
+        } else if (btnAudio.isSelected()) {
+            currentMethod = TrimMethod.AUDIO_ANALYZER;
+        } else if (btnScene.isSelected()) {
+            currentMethod = TrimMethod.SCENE_DETECTOR;
+        }
+
+        updateUIForMethod(currentMethod);
+    }
+
+    private void updateUIForMethod(TrimMethod method) {
+        boolean showImagePanels = (method == TrimMethod.MANUAL || method == TrimMethod.SCENE_DETECTOR);
+
+        introImage.setVisible(showImagePanels);
+        introImage.setManaged(showImagePanels);
+        outroImage.setVisible(showImagePanels);
+        outroImage.setManaged(showImagePanels);
+    }
+
+    private void setupTimelineControl() {
+        timelineControl = new TimelineControl();
+        timelineContainer.getChildren().clear();
+        timelineContainer.getChildren().add(timelineControl);
+
+        timelineControl.setOnStartMarkerChanged(() -> {
+            double time = timelineControl.getStartMarker();
+            startTimeLabel.setText("START: " + formatTime(time));
+        });
+
+        timelineControl.setOnEndMarkerChanged(() -> {
+            double time = timelineControl.getEndMarker();
+            endTimeLabel.setText("END: " + formatTime(time));
+        });
+
+        timelineControl.setOnSeek(() -> {
             if (mediaPlayer != null) {
-                mediaPlayer.seek(Duration.seconds(timelineSlider.getValue()));
+                mediaPlayer.seek(Duration.seconds(timelineControl.getCurrentTime()));
             }
         });
     }
@@ -107,9 +211,9 @@ public class MainController {
     @FXML
     private void handleImportButtonAction() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Videoları Seç");
+        fileChooser.setTitle("Select Videos");
         fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Video Files", "*.mp4","*.ts", "*.mkv", "*.avi", "*.mov")
+                new FileChooser.ExtensionFilter("Video Files", "*.mp4", "*.ts", "*.mkv", "*.avi", "*.mov")
         );
         List<File> selectedFiles = fileChooser.showOpenMultipleDialog(new Stage());
 
@@ -120,36 +224,69 @@ public class MainController {
                 }
             }
 
-            // İlk videoyu seç ve oynat
             if (!fileListView.getItems().isEmpty()) {
                 fileListView.getSelectionModel().select(0);
             }
+
+            infoLabel.setText(selectedFiles.size() + " file(s) added");
         }
     }
 
-    // playVideo artık File alıyor
     private void playVideo(File file) {
         if (mediaPlayer != null) {
             mediaPlayer.stop();
         }
+
+        // Clear old waveform
+        timelineControl.clearWaveform();
+
         Media media = new Media(file.toURI().toString());
         mediaPlayer = new MediaPlayer(media);
         mediaView.setMediaPlayer(mediaPlayer);
 
+        // SET VOLUME TO MAXIMUM
+        mediaPlayer.setVolume(1.0);
+
         mediaPlayer.setOnReady(() -> {
-            Duration total = mediaPlayer.getMedia().getDuration();
-            timelineSlider.setMax(total.toSeconds());
+            double duration = mediaPlayer.getMedia().getDuration().toSeconds();
+
+            // Update timeline control
+            timelineControl.setDuration(duration);
+            timelineControl.setStartMarker(0);
+            timelineControl.setEndMarker(duration);
+
+            // Update labels
+            startTimeLabel.setText("START: 00:00");
+            endTimeLabel.setText("END: " + formatTime(duration));
+            currentTimeLabel.setText("00:00 / " + formatTime(duration));
+
+            // Load waveform into timeline asynchronously
+            infoLabel.setText("Loading waveform...");
+            timelineControl.loadWaveform(file.getAbsolutePath())
+                    .thenRun(() -> Platform.runLater(() -> infoLabel.setText("Ready")));
+
+            // Sync playback position
             mediaPlayer.currentTimeProperty().addListener((obs, oldTime, newTime) -> {
-                if (!isSliderBeingDragged) {
-                    timelineSlider.setValue(newTime.toSeconds());
-                }
+                double current = newTime.toSeconds();
+                timelineControl.setCurrentTime(current);
+                currentTimeLabel.setText(formatTime(current) + " / " + formatTime(duration));
             });
         });
 
         mediaPlayer.play();
     }
 
-    // Play/Pause işlevi
+    private String formatTime(double seconds) {
+        int total = (int) seconds;
+        int h = total / 3600;
+        int m = (total % 3600) / 60;
+        int s = total % 60;
+        if (h > 0) {
+            return String.format("%d:%02d:%02d", h, m, s);
+        }
+        return String.format("%02d:%02d", m, s);
+    }
+
     @FXML
     private void handlePlayPause() {
         if (mediaPlayer != null) {
@@ -161,60 +298,70 @@ public class MainController {
         }
     }
 
-    // Forward (ileri sarma) işlevi
     @FXML
     private void handleForward() {
         if (mediaPlayer != null) {
-            double currentTime = mediaPlayer.getCurrentTime().toSeconds();
-            double totalDuration = mediaPlayer.getTotalDuration().toSeconds();
-            double newTime = Math.min(currentTime + 10, totalDuration);  // 10 saniye ileri sar
-            mediaPlayer.seek(javafx.util.Duration.seconds(newTime));
+            double current = mediaPlayer.getCurrentTime().toSeconds();
+            double total = mediaPlayer.getTotalDuration().toSeconds();
+            mediaPlayer.seek(Duration.seconds(Math.min(current + 10, total)));
         }
     }
 
-    // Rewind (geri sarma) işlevi
     @FXML
     private void handleRewind() {
         if (mediaPlayer != null) {
-            double currentTime = mediaPlayer.getCurrentTime().toSeconds();
-            double newTime = Math.max(currentTime - 10, 0);  // 10 saniye geri sar
-            mediaPlayer.seek(javafx.util.Duration.seconds(newTime));
+            double current = mediaPlayer.getCurrentTime().toSeconds();
+            mediaPlayer.seek(Duration.seconds(Math.max(current - 10, 0)));
         }
     }
 
     @FXML
     private void handleSetStart() {
-        startTimeInSec = timelineSlider.getValue();
-        System.out.println("Start set to: " + startTimeInSec + " seconds");
+        if (mediaPlayer != null) {
+            double time = mediaPlayer.getCurrentTime().toSeconds();
+            timelineControl.setStartMarker(time);
+            startTimeLabel.setText("START: " + formatTime(time));
+            infoLabel.setText("Start: " + formatTime(time));
+        }
     }
 
     @FXML
     private void handleSetEnd() {
-        endTimeInSec = timelineSlider.getValue();
-        System.out.println("End set to: " + endTimeInSec + " seconds");
+        if (mediaPlayer != null) {
+            double time = mediaPlayer.getCurrentTime().toSeconds();
+            timelineControl.setEndMarker(time);
+            endTimeLabel.setText("END: " + formatTime(time));
+            infoLabel.setText("End: " + formatTime(time));
+        }
     }
 
     @FXML
     private void handleTrim() {
         File file = fileListView.getSelectionModel().getSelectedItem();
         if (file == null) {
-            infolabel.setText("Önce video seç!");
+            infoLabel.setText("Select a video first!");
             return;
         }
 
-        String in  = file.getAbsolutePath();
-        String out = in.replace(".", "_cut.");
-        TrimMethod method = choiceMethod.getValue();
-        TrimStrategy strategy = strategies.get(method);
+        String input = file.getAbsolutePath();
+        String output = input.replace(".", "_cut.");
+        TrimStrategy strategy = strategies.get(currentMethod);
 
-        // BELİRSİZ PROGRESS BAŞLAT
-        progressBar.setProgress(-1); // -> animasyon başlar
-        infolabel.setText("İşleniyor...");
+        if (strategy == null) {
+            infoLabel.setText("Method not implemented yet");
+            return;
+        }
+
+        double start = timelineControl.getStartMarker();
+        double end = timelineControl.getEndMarker();
+
+        progressBar.setProgress(-1);
+        infoLabel.setText("Processing...");
 
         Task<Boolean> task = new Task<>() {
             @Override
             protected Boolean call() throws Exception {
-                return strategy.trim(in, out, startTimeInSec, endTimeInSec);
+                return strategy.trim(input, output, start, end);
             }
         };
 
@@ -223,75 +370,77 @@ public class MainController {
         task.setOnSucceeded(e -> {
             progressBar.progressProperty().unbind();
             progressBar.setProgress(1);
-            boolean ok = task.getValue();
-            infolabel.setText(ok ? "Trim başarılı!" : "Trim başarısız.");
+            infoLabel.setText(task.getValue() ? "Trim successful!" : "Trim failed.");
         });
 
         task.setOnFailed(e -> {
             progressBar.progressProperty().unbind();
             progressBar.setProgress(0);
-            infolabel.setText("HATA: " + task.getException().getMessage());
-            task.getException().printStackTrace();
+            infoLabel.setText("ERROR: " + task.getException().getMessage());
         });
 
         new Thread(task).start();
     }
 
-
     @FXML
     private void handleBatchTrim() {
         List<File> files = fileListView.getItems();
-        TrimMethod method = choiceMethod.getValue();
-        TrimStrategy strategy = strategies.get(method);
+        TrimStrategy strategy = strategies.get(currentMethod);
 
         if (files.isEmpty()) {
-            infolabel.setText("Önce dosya seçmelisin!");
+            infoLabel.setText("Add files first!");
             return;
         }
 
-        progressBar.setProgress(0);
-        inspector.getItems().clear();   // Önceki logları temizle
+        if (strategy == null) {
+            infoLabel.setText("Method not implemented yet");
+            return;
+        }
 
-        // 👉 ProgressUpdater yarat
+        double start = timelineControl.getStartMarker();
+        double end = timelineControl.getEndMarker();
+
+        progressBar.setProgress(0);
+        inspector.getItems().clear();
+
         ProgressUpdater updater = new ProgressUpdater(files.size(), (progress, file) -> {
             Platform.runLater(() -> {
                 progressBar.setProgress(progress);
-                inspector.getItems().add(file.getName() + " → tamamlandı");
+                inspector.getItems().add(file.getName() + " → done ✓");
                 if (progress >= 1.0) {
-                    infolabel.setText("Toplu kırpma tamamlandı!");
+                    infoLabel.setText("Batch trim complete!");
                 }
             });
         });
-        // ✅ processAll’a ProgressUpdater ver
-        batchFacade.processAll(files, startTimeInSec, endTimeInSec, updater);
+
+        batchFacade.processAll(files, start, end, updater);
     }
 
     @FXML
     private void handleIntroClick() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Intro Resmi Seç");
+        fileChooser.setTitle("Select Intro Reference Image");
         fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("PNG Dosyaları", "*.png")
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
         );
-        File selectedFile = fileChooser.showOpenDialog(introimage.getScene().getWindow());
+        File selectedFile = fileChooser.showOpenDialog(introImage.getScene().getWindow());
 
         if (selectedFile != null) {
-            introimage.setImage(new Image(selectedFile.toURI().toString()));
+            introImage.setImage(new Image(selectedFile.toURI().toString()));
         }
     }
 
     @FXML
     private void handleOutroClick() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Outro Resmi Seç");
+        fileChooser.setTitle("Select Outro Reference Image");
         fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("PNG Dosyaları", "*.png")
+                new FileChooser.ExtensionFilter("Image Files", "*.png", "*.jpg", "*.jpeg")
         );
-        File selectedFile = fileChooser.showOpenDialog(outroimage.getScene().getWindow());
+        File selectedFile = fileChooser.showOpenDialog(outroImage.getScene().getWindow());
 
         if (selectedFile != null) {
-            outroimage.setImage(new Image(selectedFile.toURI().toString()));
+            outroImage.setImage(new Image(selectedFile.toURI().toString()));
         }
     }
-
 }

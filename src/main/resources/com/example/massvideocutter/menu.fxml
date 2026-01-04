@@ -2,143 +2,177 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
-<?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ProgressBar?>
-<?import javafx.scene.control.Slider?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.control.ToggleGroup?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.media.MediaView?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/23" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.massvideocutter.ui.MainController">
-   <bottom>
-      <VBox maxHeight="-Infinity" prefHeight="80.0" prefWidth="900.0" BorderPane.alignment="CENTER">
-         <Slider fx:id="timelineSlider" />
-         <HBox alignment="CENTER" prefHeight="100.0" prefWidth="813.0">
-            <ImageView fx:id="introimage" fitHeight="72.0" fitWidth="108.0" onMouseClicked="#handleIntroClick" pickOnBounds="true" preserveRatio="true">
-               <HBox.margin>
-                  <Insets />
-               </HBox.margin>
-               <image>
-                  <Image url="@images/defintro.png" />
-               </image>
-            </ImageView>
-            <Button fx:id="btnSetStart" alignment="CENTER" mnemonicParsing="false" onAction="#handleSetStart" text="✂ Start">
-               <font>
-                  <Font size="16.0" />
-               </font>
-               <HBox.margin>
-                  <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-               </HBox.margin>
-            </Button>
-            <Button fx:id="btnRewind" alignment="CENTER" mnemonicParsing="false" onAction="#handleRewind" text="⏪">
-               <font>
-                  <Font size="16.0" />
-               </font>
-               <HBox.margin>
-                  <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-               </HBox.margin>
-            </Button>
-            <Button fx:id="btnPlayPause" alignment="CENTER" mnemonicParsing="false" onAction="#handlePlayPause" text="▶⏸">
-               <font>
-                  <Font size="16.0" />
-               </font>
-               <HBox.margin>
-                  <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-               </HBox.margin>
-            </Button>
-            <Button fx:id="btnForward" alignment="CENTER" mnemonicParsing="false" onAction="#handleForward" text="⏩">
-               <font>
-                  <Font size="16.0" />
-               </font>
-               <HBox.margin>
-                  <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-               </HBox.margin>
-            </Button>
-            <Button fx:id="btnSetEnd" alignment="CENTER" mnemonicParsing="false" onAction="#handleSetEnd" text="✂ End">
-               <font>
-                  <Font size="16.0" />
-               </font>
-               <HBox.margin>
-                  <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-               </HBox.margin>
-            </Button>
-            <ImageView fx:id="outroimage" fitHeight="72.0" fitWidth="108.0" onMouseClicked="#handleOutroClick" pickOnBounds="true" preserveRatio="true">
-               <image>
-                  <Image url="@images/defoutro.png" />
-               </image></ImageView>
-         </HBox>
-      </VBox>
-   </bottom>
-   <right>
-      <VBox alignment="CENTER" prefHeight="520.0" prefWidth="140.0" spacing="10.0" BorderPane.alignment="CENTER">
-         <Label fx:id="infolabel" prefHeight="153.0" prefWidth="135.0">
-            <font>
-               <Font size="12.0" />
-            </font>
-         </Label>
-         <ListView fx:id="inspector" prefHeight="410.0" prefWidth="120.0" />
-         <Button fx:id="btnExport" alignment="CENTER" mnemonicParsing="false" onAction="#handleTrim" text="KIRP !">
-            <VBox.margin>
-               <Insets left="5.0" right="5.0" top="5.0" />
-            </VBox.margin>
-            <font>
-               <Font size="18.0" />
-            </font>
-         </Button>
-         <Button fx:id="btnExport2" alignment="CENTER" mnemonicParsing="false" onAction="#handleBatchTrim" text="HEPSİNİ KIRP !">
-            <font>
-               <Font size="16.0" />
-            </font>
-            <VBox.margin>
-               <Insets bottom="5.0" left="5.0" right="5.0" />
-            </VBox.margin>
-         </Button>
-      </VBox>
-   </right>
-   <left>
-      <VBox prefHeight="520.0" prefWidth="140.0" BorderPane.alignment="CENTER">
-         <ListView fx:id="fileListView" prefHeight="410.0" prefWidth="120.0" />
-         <Button fx:id="btnImport" alignment="CENTER" mnemonicParsing="false" onAction="#handleImportButtonAction" prefHeight="48.0" prefWidth="130.0" text="EKLE !">
-            <font>
-               <Font size="22.0" />
-            </font>
-            <VBox.margin>
-               <Insets bottom="10.0" left="5.0" right="5.0" top="10.0" />
-            </VBox.margin>
-         </Button>
-         <ChoiceBox fx:id="choiceMethod" prefWidth="150.0">
-            <VBox.margin>
-               <Insets bottom="10.0" left="5.0" right="5.0" />
-            </VBox.margin>
-         </ChoiceBox>
-      </VBox>
-   </left>
+<BorderPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefWidth="1100" prefHeight="700" xmlns="http://javafx.com/javafx/23" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.massvideocutter.ui.MainController">
+   
+   <!-- TOP: Menu + Progress -->
    <top>
-      <VBox maxHeight="-Infinity" prefHeight="40.0" prefWidth="900.0" BorderPane.alignment="CENTER">
-         <MenuBar fx:id="menuBar" maxHeight="-Infinity" minHeight="-Infinity" prefHeight="26.0" prefWidth="1000.0">
+      <VBox maxHeight="-Infinity" BorderPane.alignment="CENTER">
+         <MenuBar fx:id="menuBar" maxHeight="-Infinity" minHeight="-Infinity" prefHeight="26.0">
             <Menu mnemonicParsing="false" text="File">
+               <MenuItem mnemonicParsing="false" text="Open" onAction="#handleImportButtonAction" />
                <MenuItem mnemonicParsing="false" text="Close" />
             </Menu>
             <Menu mnemonicParsing="false" text="Edit">
-               <MenuItem mnemonicParsing="false" text="Delete" />
+               <MenuItem mnemonicParsing="false" text="Delete Selected" />
+               <MenuItem mnemonicParsing="false" text="Clear All" />
             </Menu>
             <Menu mnemonicParsing="false" text="Help">
                <MenuItem mnemonicParsing="false" text="About" />
             </Menu>
          </MenuBar>
-         <ProgressBar fx:id="progressBar" prefHeight="14.0" prefWidth="1000.0" progress="0.0" />
+         <ProgressBar fx:id="progressBar" prefHeight="5.0" maxWidth="Infinity" progress="0.0" />
       </VBox>
    </top>
+
+   <!-- LEFT: File List + Method Selector -->
+   <left>
+      <VBox prefWidth="170.0" spacing="6.0" BorderPane.alignment="CENTER">
+         <padding>
+            <Insets top="8" right="8" bottom="8" left="8" />
+         </padding>
+         
+         <!-- File List -->
+         <ListView fx:id="fileListView" VBox.vgrow="ALWAYS" prefHeight="360.0" />
+         
+         <!-- Add Files Button -->
+         <Button fx:id="btnImport" alignment="CENTER" mnemonicParsing="false" onAction="#handleImportButtonAction" maxWidth="Infinity" prefHeight="34" text="ADD FILES" styleClass="action-button">
+            <font>
+               <Font size="12.0" />
+            </font>
+         </Button>
+         
+         <!-- Method Selector Label -->
+         <Label text="TRIM METHOD" styleClass="section-label">
+            <VBox.margin>
+               <Insets top="6.0" />
+            </VBox.margin>
+         </Label>
+         
+         <!-- Method Selector -->
+         <VBox fx:id="methodSelector" spacing="3.0" styleClass="method-selector-vertical">
+            <ToggleButton fx:id="btnManual" text="✋ Manual" styleClass="method-toggle-vertical" maxWidth="Infinity" onAction="#handleMethodChange">
+               <toggleGroup>
+                  <ToggleGroup fx:id="methodGroup" />
+               </toggleGroup>
+            </ToggleButton>
+            <ToggleButton fx:id="btnAudio" text="🔊 Audio" styleClass="method-toggle-vertical" maxWidth="Infinity" toggleGroup="$methodGroup" onAction="#handleMethodChange" />
+            <ToggleButton fx:id="btnScene" text="🎬 Scene" styleClass="method-toggle-vertical" maxWidth="Infinity" toggleGroup="$methodGroup" onAction="#handleMethodChange" />
+         </VBox>
+      </VBox>
+   </left>
+
+   <!-- CENTER: Video + Timeline + Controls -->
    <center>
-      <MediaView fx:id="mediaView" fitHeight="480.0" fitWidth="720.0" BorderPane.alignment="CENTER" />
+      <VBox alignment="CENTER" spacing="4.0" BorderPane.alignment="CENTER">
+         <padding>
+            <Insets top="8" right="8" bottom="8" left="8" />
+         </padding>
+         
+         <!-- Video Player -->
+         <MediaView fx:id="mediaView" fitHeight="340.0" fitWidth="700.0" />
+         
+         <!-- Combined Timeline + Waveform -->
+         <StackPane fx:id="timelineContainer" maxWidth="Infinity" prefHeight="60.0">
+            <VBox.margin>
+               <Insets top="4.0" />
+            </VBox.margin>
+         </StackPane>
+         
+         <!-- Time Display -->
+         <HBox alignment="CENTER" spacing="20.0">
+            <Label fx:id="startTimeLabel" text="START: --:--" styleClass="time-label" />
+            <Label fx:id="currentTimeLabel" text="00:00 / 00:00" styleClass="time-label-current" />
+            <Label fx:id="endTimeLabel" text="END: --:--" styleClass="time-label" />
+         </HBox>
+         
+         <!-- Controls Row with LARGER Image Slots -->
+         <HBox alignment="CENTER" spacing="10.0">
+            <VBox.margin>
+               <Insets top="8.0" />
+            </VBox.margin>
+            
+            <!-- Intro Reference Image - LARGE -->
+            <VBox alignment="CENTER" spacing="3.0">
+               <Label text="INTRO" styleClass="image-label" />
+               <ImageView fx:id="introImage" fitHeight="125.0" fitWidth="200.0" onMouseClicked="#handleIntroClick" pickOnBounds="true" preserveRatio="true" styleClass="reference-image">
+                  <image>
+                     <Image url="@images/defintro.png" />
+                  </image>
+               </ImageView>
+            </VBox>
+            
+            <!-- SET START Button - MEDIUM -->
+            <Button fx:id="btnSetStart" mnemonicParsing="false" onAction="#handleSetStart" text="✂" prefWidth="60" prefHeight="40" styleClass="marker-button-medium" />
+            
+            <!-- Playback Controls - MEDIUM -->
+            <HBox alignment="CENTER" spacing="4.0" styleClass="playback-controls">
+               <Button fx:id="btnRewind" mnemonicParsing="false" onAction="#handleRewind" text="⏪" prefWidth="60" prefHeight="40" styleClass="playback-button-medium" />
+               <Button fx:id="btnPlayPause" mnemonicParsing="false" onAction="#handlePlayPause" text="▶" prefWidth="90" prefHeight="60" styleClass="playback-button-main-medium" />
+               <Button fx:id="btnForward" mnemonicParsing="false" onAction="#handleForward" text="⏩" prefWidth="60" prefHeight="40" styleClass="playback-button-medium" />
+            </HBox>
+            
+            <!-- SET END Button - MEDIUM -->
+            <Button fx:id="btnSetEnd" mnemonicParsing="false" onAction="#handleSetEnd" text="✂" prefWidth="60" prefHeight="40" styleClass="marker-button-medium" />
+            
+            <!-- Outro Reference Image - LARGE -->
+            <VBox alignment="CENTER" spacing="3.0">
+               <Label text="OUTRO" styleClass="image-label" />
+               <ImageView fx:id="outroImage" fitHeight="125.0" fitWidth="200.0" onMouseClicked="#handleOutroClick" pickOnBounds="true" preserveRatio="true" styleClass="reference-image">
+                  <image>
+                     <Image url="@images/defoutro.png" />
+                  </image>
+               </ImageView>
+            </VBox>
+         </HBox>
+      </VBox>
    </center>
+
+   <!-- RIGHT: Info + Inspector + Actions -->
+   <right>
+      <VBox alignment="TOP_CENTER" prefWidth="140.0" spacing="6.0" BorderPane.alignment="CENTER">
+         <padding>
+            <Insets top="8" right="8" bottom="8" left="8" />
+         </padding>
+         
+         <!-- Info Label -->
+         <Label fx:id="infoLabel" wrapText="true" maxWidth="120.0" styleClass="info-label">
+            <font>
+               <Font size="10.0" />
+            </font>
+         </Label>
+         
+         <!-- Activity Log -->
+         <Label text="ACTIVITY LOG" styleClass="section-label" />
+         <ListView fx:id="inspector" VBox.vgrow="ALWAYS" prefHeight="320.0" />
+         
+         <!-- Action Buttons -->
+         <Button fx:id="btnTrim" alignment="CENTER" mnemonicParsing="false" onAction="#handleTrim" maxWidth="Infinity" prefHeight="36" text="✂ TRIM" styleClass="action-button">
+            <font>
+               <Font size="13.0" />
+            </font>
+         </Button>
+         <Button fx:id="btnTrimAll" alignment="CENTER" mnemonicParsing="false" onAction="#handleBatchTrim" maxWidth="Infinity" prefHeight="30" text="✂ TRIM ALL" styleClass="action-button-secondary">
+            <font>
+               <Font size="11.0" />
+            </font>
+         </Button>
+      </VBox>
+   </right>
 </BorderPane>
