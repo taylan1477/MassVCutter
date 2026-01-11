@@ -1,7 +1,6 @@
 package com.example.massvideocutter.ui;
 
 import com.example.massvideocutter.core.*;
-
 import com.example.massvideocutter.core.ffmpeg.FFmpegWrapper;
 import com.example.massvideocutter.util.ProgressUpdater;
 import javafx.application.Platform;
@@ -20,6 +19,7 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -80,13 +80,7 @@ public class MainController {
 
         strategies = Map.of(
                 TrimMethod.MANUAL, new ManualTrimStrategy(trimFacade),
-                TrimMethod.AUDIO_ANALYZER, new AudioAnalyzerStrategy(
-                        trimFacade,
-                        ffmpegWrapper,
-                        new AudioAnalyzer(),
-                        silenceThreshold,
-                        minSilenceDuration
-                )
+                TrimMethod.AUDIO_ANALYZER, new AudioAnalyzerStrategy(trimFacade, true) // Anime mode
         );
 
         // Setup components
@@ -108,6 +102,11 @@ public class MainController {
         fileListView.getSelectionModel().selectedItemProperty().addListener((obs, oldFile, newFile) -> {
             if (newFile != null) {
                 playVideo(newFile);
+                
+                // Apply cached detection results if available (Audio mode)
+                if (currentMethod == TrimMethod.AUDIO_ANALYZER && detectionResults.containsKey(newFile)) {
+                    applyDetectionResult(detectionResults.get(newFile));
+                }
             }
         });
     }
@@ -170,11 +169,114 @@ public class MainController {
             currentMethod = TrimMethod.MANUAL;
         } else if (btnAudio.isSelected()) {
             currentMethod = TrimMethod.AUDIO_ANALYZER;
+            // Auto-detect intro/outro when Audio mode is selected
+            runAutoDetect();
         } else if (btnScene.isSelected()) {
             currentMethod = TrimMethod.SCENE_DETECTOR;
         }
 
         updateUIForMethod(currentMethod);
+    }
+
+    /**
+     * Automatically detect intro/outro for ALL videos in the list
+     */
+    private void runAutoDetect() {
+        List<File> files = new ArrayList<>(fileListView.getItems());
+        if (files.isEmpty()) {
+            infoLabel.setText("Add videos first!");
+            return;
+        }
+
+        infoLabel.setText("Analyzing " + files.size() + " video(s)...");
+        progressBar.setProgress(0);
+
+        // Store detection results for each file
+        java.util.Map<File, VolumeAnalyzer.IntroOutroResult> results = new java.util.concurrent.ConcurrentHashMap<>();
+
+        Task<Void> batchTask = new Task<>() {
+            @Override
+            protected Void call() throws Exception {
+                VolumeAnalyzer analyzer = new VolumeAnalyzer();
+                
+                for (int i = 0; i < files.size(); i++) {
+                    File file = files.get(i);
+                    final int index = i;
+                    
+                    Platform.runLater(() -> {
+                        infoLabel.setText("Analyzing " + (index + 1) + "/" + files.size() + ": " + file.getName());
+                    });
+
+                    try {
+                        VolumeAnalyzer.IntroOutroResult result = analyzer.detectIntroOutro(file.getAbsolutePath());
+                        if (result != null) {
+                            results.put(file, result);
+                            
+                            // Log to inspector
+                            final String logEntry = String.format("✓ %s | Intro: 0-%ss | Outro: %s",
+                                    file.getName().substring(0, Math.min(20, file.getName().length())),
+                                    formatTime(result.introEnd),
+                                    result.outroStart > 0 ? formatTime(result.outroStart) + "s" : "N/A");
+                            Platform.runLater(() -> inspector.getItems().add(logEntry));
+                        } else {
+                            Platform.runLater(() -> inspector.getItems().add("✗ " + file.getName() + " - No detection"));
+                        }
+                    } catch (Exception e) {
+                        System.err.println("Failed to analyze: " + file.getName() + " - " + e.getMessage());
+                        Platform.runLater(() -> inspector.getItems().add("✗ " + file.getName() + " - Error"));
+                    }
+
+                    // Update progress
+                    final double progress = (double) (i + 1) / files.size();
+                    Platform.runLater(() -> progressBar.setProgress(progress));
+                }
+                return null;
+            }
+        };
+
+        batchTask.setOnSucceeded(e -> {
+            progressBar.setProgress(1.0);
+            
+            int detected = results.size();
+            infoLabel.setText("Analysis complete: " + detected + "/" + files.size() + " videos detected");
+
+            // Apply result to currently selected video
+            File selected = fileListView.getSelectionModel().getSelectedItem();
+            if (selected != null && results.containsKey(selected)) {
+                applyDetectionResult(results.get(selected));
+            }
+
+            // Store results for later use
+            detectionResults = results;
+        });
+
+        batchTask.setOnFailed(e -> {
+            progressBar.setProgress(0);
+            infoLabel.setText("Analysis failed: " + batchTask.getException().getMessage());
+        });
+
+        new Thread(batchTask).start();
+    }
+
+    // Store detection results for all videos
+    private java.util.Map<File, VolumeAnalyzer.IntroOutroResult> detectionResults = new java.util.HashMap<>();
+
+    /**
+     * Apply detection result to timeline
+     */
+    private void applyDetectionResult(VolumeAnalyzer.IntroOutroResult result) {
+        timelineControl.setStartMarker(result.recommendedTrimStart);
+        timelineControl.setEndMarker(result.recommendedTrimEnd);
+        
+        startTimeLabel.setText("START: " + formatTime(result.recommendedTrimStart));
+        endTimeLabel.setText("END: " + formatTime(result.recommendedTrimEnd));
+        
+        String info = String.format("Intro: 0-%ss | Outro: %s | Trim: %s-%s",
+                formatTime(result.introEnd),
+                result.outroStart > 0 ? formatTime(result.outroStart) + "s" : "N/A",
+                formatTime(result.recommendedTrimStart),
+                formatTime(result.recommendedTrimEnd));
+        infoLabel.setText(info);
     }
 
     private void updateUIForMethod(TrimMethod method) {
@@ -232,13 +334,15 @@ public class MainController {
         }
     }
 
+    // Waveform cache to avoid reloading
+    private java.util.Map<String, double[]> waveformCache = new java.util.HashMap<>();
+
     private void playVideo(File file) {
         if (mediaPlayer != null) {
             mediaPlayer.stop();
         }
 
-        // Clear old waveform
-        timelineControl.clearWaveform();
+        String filePath = file.getAbsolutePath();
 
         Media media = new Media(file.toURI().toString());
         mediaPlayer = new MediaPlayer(media);
@@ -252,18 +356,37 @@ public class MainController {
 
             // Update timeline control
             timelineControl.setDuration(duration);
-            timelineControl.setStartMarker(0);
-            timelineControl.setEndMarker(duration);
 
-            // Update labels
-            startTimeLabel.setText("START: 00:00");
-            endTimeLabel.setText("END: " + formatTime(duration));
+            // Apply cached detection results OR reset markers
+            if (currentMethod == TrimMethod.AUDIO_ANALYZER && detectionResults.containsKey(file)) {
+                VolumeAnalyzer.IntroOutroResult result = detectionResults.get(file);
+                timelineControl.setStartMarker(result.recommendedTrimStart);
+                timelineControl.setEndMarker(result.recommendedTrimEnd);
+                startTimeLabel.setText("START: " + formatTime(result.recommendedTrimStart));
+                endTimeLabel.setText("END: " + formatTime(result.recommendedTrimEnd));
+            } else {
+                timelineControl.setStartMarker(0);
+                timelineControl.setEndMarker(duration);
+                startTimeLabel.setText("START: 00:00");
+                endTimeLabel.setText("END: " + formatTime(duration));
+            }
+
             currentTimeLabel.setText("00:00 / " + formatTime(duration));
 
-            // Load waveform into timeline asynchronously
-            infoLabel.setText("Loading waveform...");
-            timelineControl.loadWaveform(file.getAbsolutePath())
-                    .thenRun(() -> Platform.runLater(() -> infoLabel.setText("Ready")));
+            // Load waveform - use cache if available
+            if (waveformCache.containsKey(filePath)) {
+                timelineControl.setWaveformData(waveformCache.get(filePath));
+                infoLabel.setText("Ready");
+            } else {
+                infoLabel.setText("Loading waveform...");
+                timelineControl.loadWaveform(filePath)
+                        .thenAccept(waveformData -> Platform.runLater(() -> {
+                            if (waveformData != null) {
+                                waveformCache.put(filePath, waveformData);
+                            }
+                            infoLabel.setText("Ready");
+                        }));
+            }
 
             // Sync playback position
             mediaPlayer.currentTimeProperty().addListener((obs, oldTime, newTime) -> {
@@ -273,7 +396,8 @@ public class MainController {
             });
         });
 
-        mediaPlayer.play();
+        // Don't auto-play - let user click play button
+        mediaPlayer.pause();
     }
 
     private String formatTime(double seconds) {

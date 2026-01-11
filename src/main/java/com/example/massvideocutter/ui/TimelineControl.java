@@ -95,22 +95,32 @@ public class TimelineControl extends Pane {
 
     /**
      * Load waveform from video file asynchronously.
-     * Extracts audio data for the ENTIRE video duration.
+     * Returns the waveform data for caching.
      */
-    public CompletableFuture<Void> loadWaveform(String videoPath) {
-        return CompletableFuture.runAsync(() -> {
+    public CompletableFuture<double[]> loadWaveform(String videoPath) {
+        return CompletableFuture.supplyAsync(() -> {
             try {
                 amplitudes = extractWaveform(videoPath);
-                waveformDuration = duration.get(); // Waveform covers full duration
+                waveformDuration = duration.get();
                 javafx.application.Platform.runLater(this::draw);
+                return amplitudes;
             } catch (Exception e) {
                 System.err.println("Failed to extract waveform: " + e.getMessage());
-                e.printStackTrace();
                 amplitudes = generatePlaceholderWaveform();
                 waveformDuration = duration.get();
                 javafx.application.Platform.runLater(this::draw);
+                return amplitudes;
             }
         });
+    }
+
+    /**
+     * Set waveform data directly (from cache)
+     */
+    public void setWaveformData(double[] data) {
+        this.amplitudes = data;
+        this.waveformDuration = duration.get();
+        draw();
     }
 
     private double[] extractWaveform(String videoPath) throws Exception {
