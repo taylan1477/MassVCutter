@@ -1,7 +1,7 @@
-import com.example.massvideocutter.core.AudioAnalyzer;
-import com.example.massvideocutter.core.AudioAnalyzerStrategy;
-import com.example.massvideocutter.core.TrimFacade;
-import com.example.massvideocutter.core.ffmpeg.FFmpegWrapper;
+import io.github.taylan1477.massvideocutter.core.AudioAnalyzer;
+import io.github.taylan1477.massvideocutter.core.AudioAnalyzerStrategy;
+import io.github.taylan1477.massvideocutter.core.TrimFacade;
+import io.github.taylan1477.massvideocutter.core.ffmpeg.FFmpegWrapper;
 import org.junit.jupiter.api.Test;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AudioAnalyzerStrategyTest {
 
-    // Helper: sahte Process
+    // Helper: dummy Process
     static class DummyProcess extends Process {
         @Override public OutputStream getOutputStream() { return OutputStream.nullOutputStream(); }
         @Override public InputStream getInputStream()   { return InputStream.nullInputStream(); }
@@ -20,7 +20,7 @@ class AudioAnalyzerStrategyTest {
         @Override public void destroy()                 { }
     }
 
-    // Sahte FFmpegWrapper
+    // Stub FFmpegWrapper
     static class StubFFmpegWrapper extends FFmpegWrapper {
         @Override
         public Process executeSilenceDetect(String inputPath, double threshold, double duration) {
@@ -29,7 +29,7 @@ class AudioAnalyzerStrategyTest {
         }
     }
 
-    // Sahte TrimFacade
+    // Stub TrimFacade
     static class StubTrimFacade extends TrimFacade {
         String lastIn, lastOut;
         double lastStart, lastEnd;
@@ -47,7 +47,7 @@ class AudioAnalyzerStrategyTest {
         }
     }
 
-    // Sahte AudioAnalyzer
+    // Stub AudioAnalyzer
     static class StubAnalyzer extends AudioAnalyzer {
         private final List<SilenceSegment> segments;
         StubAnalyzer(List<SilenceSegment> segments) {
@@ -61,7 +61,7 @@ class AudioAnalyzerStrategyTest {
 
     @Test
     void testTrim_successful() {
-        // set up a stub segment list: [0–5] ve [55–60]
+        // Set up a stub segment list: [0-5] and [55-60]
         AudioAnalyzer.SilenceSegment seg1 = new AudioAnalyzer.SilenceSegment(0, 5);
         AudioAnalyzer.SilenceSegment seg2 = new AudioAnalyzer.SilenceSegment(55, 60);
 
@@ -74,7 +74,7 @@ class AudioAnalyzerStrategyTest {
 
         boolean result = strat.trim("in.mp4", "out.mp4", 0, 0);
         assertTrue(result);
-        // doğru start/end ile çağrılmış mı?
+        // Verify correct start/end were passed
         assertEquals(5.0, tf.lastStart);
         assertEquals(55.0, tf.lastEnd);
         assertEquals("in.mp4", tf.lastIn);
@@ -85,7 +85,7 @@ class AudioAnalyzerStrategyTest {
     void testTrim_noSilence() {
         StubFFmpegWrapper ff = new StubFFmpegWrapper();
         StubTrimFacade tf = new StubTrimFacade(true);
-        StubAnalyzer an = new StubAnalyzer(List.of());  // boş segment
+        StubAnalyzer an = new StubAnalyzer(List.of());  // empty segments
         AudioAnalyzerStrategy strat = new AudioAnalyzerStrategy(
                 tf, ff, an, -30.0, 0.5
         );

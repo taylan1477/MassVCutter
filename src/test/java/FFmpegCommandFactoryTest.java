@@ -1,5 +1,5 @@
-import com.example.massvideocutter.core.ffmpeg.FFmpegCommandFactory;
-import com.example.massvideocutter.core.ffmpeg.command.FFmpegCommandBuilder;
+import io.github.taylan1477.massvideocutter.core.ffmpeg.FFmpegCommandFactory;
+import io.github.taylan1477.massvideocutter.core.ffmpeg.command.FFmpegCommandBuilder;
 
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;

@@ -1,6 +1,6 @@
-import com.example.massvideocutter.core.BatchProcessFacade;
-import com.example.massvideocutter.core.TaskManager;
-import com.example.massvideocutter.core.TrimFacade;
+import io.github.taylan1477.massvideocutter.core.BatchProcessFacade;
+import io.github.taylan1477.massvideocutter.core.TaskManager;
+import io.github.taylan1477.massvideocutter.core.TrimFacade;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ class BatchProcessFacadeTest {
     @BeforeEach
     void setUp() {
         fakeTrimFacade = new FakeTrimFacade();
-        TaskManager taskManager = new TaskManager();  // Şu an boşsa değişmeyecek ama ileride genişleyebilir
+        TaskManager taskManager = new TaskManager();  // Currently minimal, will be extended later
         batchProcessFacade = new BatchProcessFacade(fakeTrimFacade, taskManager);
     }
 
@@ -38,18 +38,18 @@ class BatchProcessFacadeTest {
         // Act
         batchProcessFacade.processAll(files, 10.0, 20.0, (file, success, output) -> {
             callbackLogs.add(file.getName() + "-" + success);
-            latch.countDown();  // Bitince bir azalt
+            latch.countDown();  // Decrement when done
         });
 
-        // Latch ile tüm işlemleri bekle (max 5 saniye bekle ki kitlenirse fail atsın)
+        // Wait for all tasks to complete (max 5 seconds to prevent hanging)
         boolean completed = latch.await(5, TimeUnit.SECONDS);
-        assertTrue(completed, "Tüm işlemler zamanında tamamlanmalı");
+        assertTrue(completed, "All tasks should complete in time");
 
         // Assert
         assertEquals(2, fakeTrimFacade.callCount);
 
         List<String> expectedLogs = List.of("test1.mp4-true", "test2.mp4-true");
-        assertTrue(callbackLogs.containsAll(expectedLogs), "Tüm callback sonuçları alınmalı");
+        assertTrue(callbackLogs.containsAll(expectedLogs), "All callback results should be received");
     }
 
     // --- Fake TrimFacade ---

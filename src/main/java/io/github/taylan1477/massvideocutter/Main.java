@@ -1,0 +1,31 @@
+package io.github.taylan1477.massvideocutter;
+
+import javafx.application.Application;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
+import javafx.stage.Stage;
+
+import java.util.Objects;
+
+public class Main extends Application {
+    @Override
+    public void start(Stage primaryStage) throws Exception {
+        Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource("/io/github/taylan1477/massvideocutter/menu.fxml")));
+        primaryStage.setTitle("MassVCutter");
+
+        // Create scene
+        Scene scene = new Scene(root);
+
+        // Load CSS stylesheet
+        scene.getStylesheets().add(Objects.requireNonNull(getClass().getResource("/io/github/taylan1477/massvideocutter/css/style.css")).toExternalForm());
+
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    public static void main(String[] args) {
+        System.setProperty("jdk.disableAttachMechanism", "true");
+        launch(args);
+    }
+}

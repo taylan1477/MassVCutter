@@ -1,4 +1,4 @@
-import com.example.massvideocutter.core.ffmpeg.command.*;
+import io.github.taylan1477.massvideocutter.core.ffmpeg.command.*;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
