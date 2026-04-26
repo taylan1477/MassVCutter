@@ -1,5 +1,8 @@
 package io.github.taylan1477.massvideocutter.ui;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.layout.Pane;
@@ -19,6 +22,8 @@ import java.util.concurrent.CompletableFuture;
  * Uses FFmpeg to extract audio amplitude data.
  */
 public class WaveformView extends Pane {
+
+    private static final Logger logger = LoggerFactory.getLogger(WaveformView.class);
 
     private final Canvas canvas;
     private double[] amplitudes;
@@ -62,7 +67,7 @@ public class WaveformView extends Pane {
                 amplitudes = extractWaveform(videoPath);
                 javafx.application.Platform.runLater(this::draw);
             } catch (Exception e) {
-                System.err.println("Failed to extract waveform: " + e.getMessage());
+                logger.warn("Failed to extract waveform: {}", e.getMessage());
                 amplitudes = generateFakeWaveform(); // Fallback
                 javafx.application.Platform.runLater(this::draw);
             }

@@ -675,3 +675,56 @@
     -fx-background-color: #FFA500;
     -fx-text-fill: #000000;
 }
+
+/* ============================================
+   SETTINGS DIALOG
+   ============================================ */
+.settings-title {
+    -fx-text-fill: #FFA500;
+    -fx-font-weight: bold;
+}
+
+.settings-hint {
+    -fx-text-fill: #888888;
+    -fx-font-size: 11px;
+}
+
+/* Text fields in settings */
+.text-field {
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: #e0e0e0;
+    -fx-border-color: #444444;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 8px;
+    -fx-prompt-text-fill: #666666;
+}
+
+.text-field:focused {
+    -fx-border-color: #FFA500;
+    -fx-effect: dropshadow(gaussian, rgba(255, 165, 0, 0.3), 6, 0, 0, 0);
+}
+
+/* Separators */
+.separator .line {
+    -fx-border-color: #333333;
+}
+
+/* Hyperlinks */
+.hyperlink {
+    -fx-text-fill: #00BFFF;
+    -fx-border-color: transparent;
+}
+
+.hyperlink:hover {
+    -fx-text-fill: #33CCFF;
+}
+
+/* Context menu */
+.context-menu {
+    -fx-background-color: #252525;
+    -fx-border-color: #444444;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 4px;
+}

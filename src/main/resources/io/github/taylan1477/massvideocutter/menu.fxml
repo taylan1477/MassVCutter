@@ -7,6 +7,7 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.ToggleButton?>
 <?import javafx.scene.control.ToggleGroup?>
@@ -32,9 +33,11 @@
             <Menu mnemonicParsing="false" text="Edit">
                <MenuItem mnemonicParsing="false" text="Delete Selected" />
                <MenuItem mnemonicParsing="false" text="Clear All" />
+               <SeparatorMenuItem />
+               <MenuItem mnemonicParsing="false" text="Settings..." onAction="#handleSettings" />
             </Menu>
             <Menu mnemonicParsing="false" text="Help">
-               <MenuItem mnemonicParsing="false" text="About" />
+               <MenuItem mnemonicParsing="false" text="About" onAction="#handleAbout" />
             </Menu>
          </MenuBar>
          <ProgressBar fx:id="progressBar" prefHeight="5.0" maxWidth="Infinity" progress="0.0" />

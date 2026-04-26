@@ -1,5 +1,8 @@
 package io.github.taylan1477.massvideocutter.ui;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.scene.Cursor;
@@ -23,6 +26,8 @@ import java.util.concurrent.CompletableFuture;
  * Waveform covers the ENTIRE video duration for full sync with timeline.
  */
 public class TimelineControl extends Pane {
+
+    private static final Logger logger = LoggerFactory.getLogger(TimelineControl.class);
 
     // Properties
     private final DoubleProperty duration = new SimpleDoubleProperty(100);
@@ -105,7 +110,7 @@ public class TimelineControl extends Pane {
                 javafx.application.Platform.runLater(this::draw);
                 return amplitudes;
             } catch (Exception e) {
-                System.err.println("Failed to extract waveform: " + e.getMessage());
+                logger.warn("Failed to extract waveform: {}", e.getMessage());
                 amplitudes = generatePlaceholderWaveform();
                 waveformDuration = duration.get();
                 javafx.application.Platform.runLater(this::draw);
@@ -157,11 +162,11 @@ public class TimelineControl extends Pane {
         process.waitFor();
 
         if (rawSamples.isEmpty()) {
-            System.out.println("No audio samples extracted, using placeholder");
+            logger.debug("No audio samples extracted, using placeholder");
             return generatePlaceholderWaveform();
         }
 
-        System.out.println("Extracted " + rawSamples.size() + " audio samples");
+        logger.debug("Extracted {} audio samples", rawSamples.size());
 
         // Downsample to target sample count with PEAK detection (not RMS)
         double[] result = new double[sampleCount];

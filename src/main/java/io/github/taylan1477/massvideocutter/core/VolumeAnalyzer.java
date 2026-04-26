@@ -1,5 +1,8 @@
 package io.github.taylan1477.massvideocutter.core;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -10,6 +13,8 @@ import java.util.List;
  * Uses hardware acceleration when available.
  */
 public class VolumeAnalyzer {
+
+    private static final Logger logger = LoggerFactory.getLogger(VolumeAnalyzer.class);
 
     private static final String FFMPEG_PATH = "C:/Projeler/HelperTools/ffmpeg-7.1.1/bin/ffmpeg.exe";
     private static final String FFPROBE_PATH = "C:/Projeler/HelperTools/ffmpeg-7.1.1/bin/ffprobe.exe";
@@ -146,10 +151,9 @@ public class VolumeAnalyzer {
             threshold = maxVolume - THRESHOLD_OFFSET_DB;
         }
 
-        System.out.println(">>> [VolumeAnalyzer] " + segmentType + " range " + rangeStart + "s-" + rangeEnd + "s: " +
-                           "max=" + String.format("%.1f", maxVolume) + "dB, " +
-                           "avg=" + String.format("%.1f", avgVolume) + "dB, " +
-                           "threshold=" + String.format("%.1f", threshold) + "dB");
+        logger.debug("{} range {}s-{}s: max={:.1f}dB, avg={:.1f}dB, threshold={:.1f}dB",
+                segmentType, rangeStart, rangeEnd,
+                maxVolume, avgVolume, threshold);
 
         // Find segments
         List<HighVolumeSegment> segments = new ArrayList<>();
@@ -182,7 +186,7 @@ public class VolumeAnalyzer {
 
         // If no segments found with strict criteria, try relaxed (30s minimum)
         if (segments.isEmpty()) {
-            System.out.println(">>> [VolumeAnalyzer] No " + MIN_SEGMENT_DURATION + "s+ segment, trying 30s...");
+            logger.debug("No {}s+ {} segment found, trying 30s...", MIN_SEGMENT_DURATION, segmentType);
             return findSegmentRelaxed(levels, rangeStart, rangeEnd, threshold, 30);
         }
 
@@ -192,8 +196,8 @@ public class VolumeAnalyzer {
                 .orElse(null);
 
         if (best != null) {
-            System.out.println(">>> [VolumeAnalyzer] " + segmentType + " found: " + 
-                               best.startSecond + "s - " + best.endSecond + "s (" + best.durationSeconds + "s)");
+            logger.debug("{} found: {}s - {}s ({}s)", segmentType,
+                    best.startSecond, best.endSecond, best.durationSeconds);
         }
 
         return best;
@@ -230,19 +234,20 @@ public class VolumeAnalyzer {
      * Detect intro/outro - main method
      */
     public IntroOutroResult detectIntroOutro(String videoPath) throws Exception {
-        System.out.println(">>> [VolumeAnalyzer] Analyzing: " + videoPath.substring(videoPath.lastIndexOf("\\") + 1));
+        String fileName = videoPath.substring(videoPath.lastIndexOf("\\") + 1);
+        logger.info("Analyzing: {}", fileName);
 
         double videoDuration = getVideoDuration(videoPath);
         if (videoDuration <= 0) {
-            System.out.println(">>> [VolumeAnalyzer] ERROR: Could not get duration");
+            logger.error("Could not get duration for: {}", fileName);
             return null;
         }
 
-        System.out.println(">>> [VolumeAnalyzer] Duration: " + String.format("%.0f", videoDuration) + "s");
+        logger.info("Duration: {:.0f}s", videoDuration);
 
         List<Double> levels = extractVolumeLevels(videoPath, videoDuration);
         if (levels.isEmpty()) {
-            System.out.println(">>> [VolumeAnalyzer] ERROR: No volume data");
+            logger.error("No volume data for: {}", fileName);
             return null;
         }
 
@@ -257,7 +262,7 @@ public class VolumeAnalyzer {
             
             // Validate outro doesn't overlap intro
             if (outro != null && intro != null && outro.startSecond <= intro.endSecond + 60) {
-                System.out.println(">>> [VolumeAnalyzer] OUTRO too close to INTRO, ignoring");
+                logger.debug("OUTRO too close to INTRO, ignoring");
                 outro = null;
             }
         }
@@ -266,10 +271,10 @@ public class VolumeAnalyzer {
         double trimStart = intro != null ? intro.endSecond + 2 : 0;
         double trimEnd = outro != null ? outro.startSecond - 2 : videoDuration;
 
-        System.out.println(">>> [VolumeAnalyzer] === RESULT ===");
-        System.out.println(">>> [VolumeAnalyzer] INTRO: " + (intro != null ? intro.startSecond + "s-" + intro.endSecond + "s" : "N/A"));
-        System.out.println(">>> [VolumeAnalyzer] OUTRO: " + (outro != null ? outro.startSecond + "s-" + outro.endSecond + "s" : "N/A"));
-        System.out.println(">>> [VolumeAnalyzer] TRIM: " + String.format("%.0f", trimStart) + "s - " + String.format("%.0f", trimEnd) + "s");
+        logger.info("=== RESULT for {} ===", fileName);
+        logger.info("INTRO: {}", intro != null ? intro.startSecond + "s-" + intro.endSecond + "s" : "N/A");
+        logger.info("OUTRO: {}", outro != null ? outro.startSecond + "s-" + outro.endSecond + "s" : "N/A");
+        logger.info("TRIM: {:.0f}s - {:.0f}s", trimStart, trimEnd);
 
         return new IntroOutroResult(
                 intro != null ? intro.startSecond : 0,

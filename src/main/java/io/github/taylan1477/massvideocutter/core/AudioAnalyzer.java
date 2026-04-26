@@ -1,14 +1,19 @@
 package io.github.taylan1477.massvideocutter.core;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Sadece FFmpeg'in silencedetect filtresinin stderr çıktısını parse eder.
+ * Parses FFmpeg silencedetect filter stderr output to find silence segments.
  */
 public class AudioAnalyzer {
+
+    private static final Logger logger = LoggerFactory.getLogger(AudioAnalyzer.class);
 
     public List<SilenceSegment> analyzeSilenceFromProcess(Process ffmpegProcess) throws Exception {
         List<SilenceSegment> silences = new ArrayList<>();
@@ -18,21 +23,20 @@ public class AudioAnalyzer {
             String line;
             Double start = null;
             while ((line = reader.readLine()) != null) {
-                // Her satırı bastır
-                System.out.println(">>> [DEBUG stderr] " + line);
+                logger.trace("FFmpeg stderr: {}", line);
 
                 if (line.contains("silence_start:")) {
                     String[] parts = line.split("silence_start:");
                     start = Double.parseDouble(parts[1].trim());
-                    System.out.println(">>> [DEBUG] Detected silence_start at " + start + "s");
+                    logger.debug("Detected silence_start at {}s", start);
                 } else if (line.contains("silence_end:")) {
                     String[] parts = line.split("silence_end:");
                     String[] sub = parts[1].trim().split("\\s+");
                     double end = Double.parseDouble(sub[0]);
-                    System.out.println(">>> [DEBUG] Detected silence_end at " + end + "s");
+                    logger.debug("Detected silence_end at {}s", end);
                     if (start != null) {
                         silences.add(new SilenceSegment(start, end));
-                        System.out.println(">>> [DEBUG] Added SilenceSegment(" + start + "," + end + ")");
+                        logger.debug("Added SilenceSegment({}, {})", start, end);
                         start = null;
                     }
                 }
@@ -40,7 +44,7 @@ public class AudioAnalyzer {
         }
 
         int exit = ffmpegProcess.waitFor();
-        System.out.println(">>> [DEBUG] silence-detect process exited with code " + exit);
+        logger.debug("silence-detect process exited with code {}", exit);
         return silences;
     }
 

@@ -1,9 +1,10 @@
 package io.github.taylan1477.massvideocutter.core;
 
 import io.github.taylan1477.massvideocutter.core.ffmpeg.FFmpegWrapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Locale;
 
 /**
  * Audio-based trim strategy with two modes:
@@ -11,6 +12,9 @@ import java.util.Locale;
  * 2. ANIME mode - detects loud intro/outro music segments
  */
 public class AudioAnalyzerStrategy implements TrimStrategy {
+
+    private static final Logger logger = LoggerFactory.getLogger(AudioAnalyzerStrategy.class);
+
     private final TrimFacade trimFacade;
     private final FFmpegWrapper ffmpegWrapper;
     private final AudioAnalyzer silenceAnalyzer;
@@ -58,7 +62,7 @@ public class AudioAnalyzerStrategy implements TrimStrategy {
                 return trimSilenceMode(inputPath, outputPath);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Trim failed for: {}", inputPath, e);
             return false;
         }
     }
@@ -67,19 +71,19 @@ public class AudioAnalyzerStrategy implements TrimStrategy {
      * Anime mode: detect loud intro/outro music and trim content between them
      */
     private boolean trimAnimeMode(String inputPath, String outputPath) throws Exception {
-        System.out.println(">>> [AudioAnalyzerStrategy] Using ANIME mode (volume-based)");
+        logger.info("Using ANIME mode (volume-based)");
 
         VolumeAnalyzer.IntroOutroResult result = volumeAnalyzer.detectIntroOutro(inputPath);
 
         if (result == null) {
-            System.out.println(">>> [AudioAnalyzerStrategy] Could not detect intro/outro!");
+            logger.warn("Could not detect intro/outro for: {}", inputPath);
             return false;
         }
 
         double trimStart = result.recommendedTrimStart;
         double trimEnd = result.recommendedTrimEnd;
 
-        System.out.printf(">>> [AudioAnalyzerStrategy] Anime trim: %.2fs - %.2fs%n", trimStart, trimEnd);
+        logger.info("Anime trim: {:.2f}s - {:.2f}s", trimStart, trimEnd);
 
         return trimFacade.trimVideo(inputPath, outputPath, trimStart, trimEnd);
     }
@@ -88,7 +92,7 @@ public class AudioAnalyzerStrategy implements TrimStrategy {
      * Silence mode: detect silence gaps at beginning/end (original behavior)
      */
     private boolean trimSilenceMode(String inputPath, String outputPath) throws Exception {
-        System.out.println(">>> [AudioAnalyzerStrategy] Using SILENCE mode");
+        logger.info("Using SILENCE mode");
 
         Process process = ffmpegWrapper.executeSilenceDetect(
                 inputPath, silenceThreshold, minSilenceDuration
@@ -98,14 +102,14 @@ public class AudioAnalyzerStrategy implements TrimStrategy {
                 silenceAnalyzer.analyzeSilenceFromProcess(process);
 
         if (segments.isEmpty()) {
-            System.out.println("Sessiz segment bulunamadı.");
+            logger.warn("No silence segments found for: {}", inputPath);
             return false;
         }
 
         double trimStart = segments.getFirst().end;
         double trimEnd = segments.getLast().start;
 
-        System.out.printf("Trim aralığı: %.2f - %.2f%n", trimStart, trimEnd);
+        logger.info("Silence trim: {:.2f}s - {:.2f}s", trimStart, trimEnd);
 
         return trimFacade.trimVideo(inputPath, outputPath, trimStart, trimEnd);
     }
@@ -117,7 +121,7 @@ public class AudioAnalyzerStrategy implements TrimStrategy {
         try {
             return volumeAnalyzer.detectIntroOutro(inputPath);
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Detection failed for: {}", inputPath, e);
             return null;
         }
     }

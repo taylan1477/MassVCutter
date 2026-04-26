@@ -13,7 +13,7 @@ public class TSCommandBuilder implements FFmpegCommandBuilder {
                 "-ss", startTime,
                 "-t", duration,
                 "-c:v", "copy",
-                "-c:a", "aac", // TS formatı bazen audio encode ister
+                "-c:a", "aac", // TS format sometimes requires audio re-encoding
                 outputPath
         );
     }

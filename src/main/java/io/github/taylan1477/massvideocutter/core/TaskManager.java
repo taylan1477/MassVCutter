@@ -5,16 +5,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Basit bir Thread Pool yöneticisi.
- * submit() ile Runnable iş parçacıklarını kuyruğa ekler.
- * shutdown() ile havuzun kapanmasını sağlar.
+ * Simple thread pool manager.
+ * Use submit() to queue Runnable tasks for background execution.
+ * Use shutdown() to gracefully close the pool.
  */
 public class TaskManager {
 
     private final ExecutorService executor;
 
     /**
-     * Varsayılan olarak, CPU çekirdek sayısı kadar thread yaratır.
+     * Creates a thread pool sized to the number of available CPU cores.
      */
     public TaskManager() {
         int threads = Runtime.getRuntime().availableProcessors();
@@ -22,16 +22,16 @@ public class TaskManager {
     }
 
     /**
-     * Arka planda çalıştırılacak işi kuyruğa ekler.
-     * @param task Runnable iş
+     * Submit a task for background execution.
+     * @param task Runnable task to execute
      */
     public void submit(Runnable task) {
         executor.submit(task);
     }
 
     /**
-     * Havuzu düzgünce kapatır, bekleyen işlere süre tanır.
-     * Genellikle uygulama kapanırken çağrılır.
+     * Gracefully shuts down the pool, allowing pending tasks time to complete.
+     * Typically called on application exit.
      */
     public void shutdown() {
         executor.shutdown();

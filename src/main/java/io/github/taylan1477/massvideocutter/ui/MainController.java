@@ -2,19 +2,28 @@ package io.github.taylan1477.massvideocutter.ui;
 
 import io.github.taylan1477.massvideocutter.core.*;
 import io.github.taylan1477.massvideocutter.core.ffmpeg.FFmpegWrapper;
+import io.github.taylan1477.massvideocutter.util.AppSettings;
 import io.github.taylan1477.massvideocutter.util.ProgressUpdater;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.StackPane;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.stage.FileChooser;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -22,8 +31,11 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class MainController {
+
+    private static final Logger logger = LoggerFactory.getLogger(MainController.class);
 
     // UI Components
     @FXML private Label infoLabel;
@@ -88,6 +100,7 @@ public class MainController {
         setupDragAndDrop();
         setupMethodSelector();
         setupTimelineControl();
+        setupKeyboardShortcuts();
     }
 
     private void setupFileListView() {
@@ -95,7 +108,31 @@ public class MainController {
             @Override
             protected void updateItem(File item, boolean empty) {
                 super.updateItem(item, empty);
-                setText((empty || item == null) ? null : item.getName());
+                if (empty || item == null) {
+                    setText(null);
+                    setContextMenu(null);
+                } else {
+                    setText(item.getName());
+                    
+                    ContextMenu contextMenu = new ContextMenu();
+                    MenuItem deleteItem = new MenuItem("Remove from List (Q/Del)");
+                    deleteItem.setOnAction(e -> {
+                        fileListView.getItems().remove(item);
+                        infoLabel.setText("Removed: " + item.getName());
+                    });
+                    
+                    MenuItem openLocItem = new MenuItem("Open File Location");
+                    openLocItem.setOnAction(e -> {
+                        try {
+                            java.awt.Desktop.getDesktop().open(item.getParentFile());
+                        } catch (Exception ex) {
+                            logger.error("Failed to open file location", ex);
+                        }
+                    });
+                    
+                    contextMenu.getItems().addAll(deleteItem, new SeparatorMenuItem(), openLocItem);
+                    setContextMenu(contextMenu);
+                }
             }
         });
 
@@ -223,7 +260,7 @@ public class MainController {
                             Platform.runLater(() -> inspector.getItems().add("✗ " + file.getName() + " - No detection"));
                         }
                     } catch (Exception e) {
-                        System.err.println("Failed to analyze: " + file.getName() + " - " + e.getMessage());
+                        logger.error("Failed to analyze: {} - {}", file.getName(), e.getMessage());
                         Platform.runLater(() -> inspector.getItems().add("✗ " + file.getName() + " - Error"));
                     }
 
@@ -345,9 +382,15 @@ public class MainController {
 
         String filePath = file.getAbsolutePath();
 
-        Media media = new Media(file.toURI().toString());
-        mediaPlayer = new MediaPlayer(media);
-        mediaView.setMediaPlayer(mediaPlayer);
+        try {
+            Media media = new Media(file.toURI().toString());
+            mediaPlayer = new MediaPlayer(media);
+            mediaView.setMediaPlayer(mediaPlayer);
+        } catch (Exception e) {
+            logger.error("Failed to load video: {}", file.getName(), e);
+            infoLabel.setText("Error: Could not load " + file.getName());
+            return;
+        }
 
         // SET VOLUME TO MAXIMUM
         mediaPlayer.setVolume(1.0);
@@ -469,7 +512,7 @@ public class MainController {
         }
 
         String input = file.getAbsolutePath();
-        String output = input.replace(".", "_cut.");
+        String output = AppSettings.getInstance().getOutputPath(input);
         TrimStrategy strategy = strategies.get(currentMethod);
 
         if (strategy == null) {
@@ -566,6 +609,193 @@ public class MainController {
 
         if (selectedFile != null) {
             outroImage.setImage(new Image(selectedFile.toURI().toString()));
+        }
+    }
+
+    @FXML
+    private void handleAbout() {
+        Alert about = new Alert(Alert.AlertType.NONE);
+        about.setTitle("About MassVCutter");
+        about.setHeaderText("MassVCutter v0.6.0");
+
+        // Custom content with clickable GitHub link
+        javafx.scene.layout.VBox content = new javafx.scene.layout.VBox(8);
+        content.setPadding(new javafx.geometry.Insets(10));
+
+        Label titleLabel = new Label("MassVCutter");
+        titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #FFA500;");
+
+        Label versionLabel = new Label("Version 0.6.0");
+        versionLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #cccccc;");
+
+        Label descLabel = new Label("Mass Video Cutter — Batch trim tool with\naudio-based intro/outro detection for anime.");
+        descLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #aaaaaa;");
+        descLabel.setWrapText(true);
+
+        Label devLabel = new Label("Developer: Taylan Özgür Özdemir");
+        devLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #cccccc;");
+
+        javafx.scene.control.Hyperlink githubLink = new javafx.scene.control.Hyperlink("github.com/taylan1477/MassVCutter");
+        githubLink.setStyle("-fx-font-size: 12px; -fx-text-fill: #00BFFF;");
+        githubLink.setOnAction(e -> {
+            try {
+                java.awt.Desktop.getDesktop().browse(new java.net.URI("https://github.com/taylan1477/MassVCutter"));
+            } catch (Exception ex) {
+                logger.error("Failed to open GitHub link", ex);
+            }
+        });
+
+        Label licenseLabel = new Label("License: MIT");
+        licenseLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #888888;");
+
+        Label techLabel = new Label("Built with Java 23 • JavaFX 23 • FFmpeg");
+        techLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #888888;");
+
+        content.getChildren().addAll(titleLabel, versionLabel, descLabel, 
+                new javafx.scene.control.Separator(),
+                devLabel, githubLink,
+                new javafx.scene.control.Separator(),
+                licenseLabel, techLabel);
+
+        about.getDialogPane().setContent(content);
+        about.getDialogPane().setPrefWidth(360);
+        about.getButtonTypes().add(ButtonType.CLOSE);
+
+        // Apply dark styling to match the app
+        about.getDialogPane().setStyle(
+                "-fx-background-color: #2b2b2b;" +
+                "-fx-border-color: #FFA500; -fx-border-width: 1px;"
+        );
+        about.getDialogPane().lookup(".header-panel").setStyle(
+                "-fx-background-color: #1a1a1a;"
+        );
+
+        about.showAndWait();
+    }
+
+    // ============================
+    // Keyboard Shortcuts
+    // ============================
+
+    private void setupKeyboardShortcuts() {
+        // Attach after scene is available
+        Platform.runLater(() -> {
+            Scene scene = menuBar.getScene();
+            if (scene == null) return;
+
+            scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+                // Don't intercept if a text field is focused
+                if (scene.getFocusOwner() instanceof TextField) return;
+
+                boolean shift = event.isShiftDown();
+
+                switch (event.getCode()) {
+                    case SPACE -> {
+                        handlePlayPause();
+                        event.consume();
+                    }
+                    case ENTER -> {
+                        if (shift) {
+                            handleTrim();
+                        } else {
+                            handleBatchTrim();
+                        }
+                        event.consume();
+                    }
+                    case W -> {
+                        handleSetStart();
+                        event.consume();
+                    }
+                    case S -> {
+                        if (!event.isControlDown()) { // Don't capture Ctrl+S
+                            handleSetEnd();
+                            event.consume();
+                        }
+                    }
+                    case A -> {
+                        if (!event.isControlDown()) {
+                            seekRelative(shift ? -30 : -5);
+                            event.consume();
+                        }
+                    }
+                    case D -> {
+                        seekRelative(shift ? 30 : 5);
+                        event.consume();
+                    }
+                    case LEFT -> {
+                        seekRelative(shift ? -30 : -5);
+                        event.consume();
+                    }
+                    case RIGHT -> {
+                        seekRelative(shift ? 30 : 5);
+                        event.consume();
+                    }
+                    case Q, DELETE -> {
+                        removeSelectedFile();
+                        event.consume();
+                    }
+                    default -> {}
+                }
+            });
+
+            logger.info("Keyboard shortcuts registered");
+        });
+    }
+
+    private void seekRelative(double seconds) {
+        if (mediaPlayer == null) return;
+
+        double currentSec = mediaPlayer.getCurrentTime().toSeconds();
+        double targetSec = Math.max(0, Math.min(currentSec + seconds, mediaPlayer.getTotalDuration().toSeconds()));
+
+        mediaPlayer.seek(Duration.seconds(targetSec));
+        timelineControl.setCurrentTime(targetSec);
+
+        logger.debug("Seek: {}s → {}s", String.format("%.1f", currentSec), String.format("%.1f", targetSec));
+    }
+
+    private void removeSelectedFile() {
+        File selected = fileListView.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            fileListView.getItems().remove(selected);
+            infoLabel.setText("Removed: " + selected.getName());
+            logger.debug("Removed file: {}", selected.getName());
+
+            // If no files left, clear player
+            if (fileListView.getItems().isEmpty() && mediaPlayer != null) {
+                mediaPlayer.stop();
+                mediaPlayer.dispose();
+                mediaPlayer = null;
+            }
+        }
+    }
+
+    // ============================
+    // Settings Dialog
+    // ============================
+
+    @FXML
+    private void handleSettings() {
+        try {
+            FXMLLoader loader = new FXMLLoader(Objects.requireNonNull(
+                    getClass().getResource("/io/github/taylan1477/massvideocutter/settings.fxml")));
+            Parent root = loader.load();
+
+            Stage settingsStage = new Stage();
+            settingsStage.setTitle("Settings — MassVCutter");
+            settingsStage.initModality(Modality.APPLICATION_MODAL);
+            settingsStage.initOwner(menuBar.getScene().getWindow());
+
+            Scene scene = new Scene(root);
+            // Apply same stylesheet
+            scene.getStylesheets().add(Objects.requireNonNull(
+                    getClass().getResource("/io/github/taylan1477/massvideocutter/css/style.css")).toExternalForm());
+
+            settingsStage.setScene(scene);
+            settingsStage.setResizable(false);
+            settingsStage.showAndWait();
+        } catch (Exception e) {
+            logger.error("Failed to open Settings dialog", e);
         }
     }
 }

@@ -111,10 +111,10 @@ src/main/java/com/example/massvideocutter/
 - [x] Waveform caching (instant switch)
 - [x] Detection result caching
 - [x] Inspector log with analysis results
+- [x] **Settings Panel** - Custom output folder
+- [x] **Keyboard Shortcuts** - Space=play/pause, S=set start, E=set end, etc.
 
 ### Planned 📋
-- [ ] **Settings Panel** - FFmpeg path, theme selection, default output folder
-- [ ] **Keyboard Shortcuts** - Space=play/pause, S=set start, E=set end, etc.
 - [ ] **Progress Notifications** - System tray notifications for batch completion
 - [ ] **Output Preview** - Preview trimmed result before saving
 - [ ] **Undo/Redo** - Undo last marker change
@@ -132,6 +132,8 @@ src/main/java/com/example/massvideocutter/
 - [x] Strategy Pattern for trim methods
 - [x] Facade Pattern for FFmpeg operations
 - [x] Debug console logging
+- [x] **Error Handling** - Centralized exception handling
+- [x] **Logging Framework** - SLF4J / Logback integration
 
 ### Planned 📋
 - [ ] **API Documentation** - JavaDoc for all public classes
@@ -142,8 +144,6 @@ src/main/java/com/example/massvideocutter/
 - [ ] **Changelog** - CHANGELOG.md with version history
 - [ ] **Contributing Guide** - CONTRIBUTING.md
 - [ ] **Code Style** - Checkstyle / EditorConfig
-- [ ] **Error Handling** - Centralized exception handling
-- [ ] **Logging Framework** - SLF4J / Log4j integration
 
 ---
 

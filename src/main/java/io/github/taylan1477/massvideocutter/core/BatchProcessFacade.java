@@ -1,5 +1,7 @@
 package io.github.taylan1477.massvideocutter.core;
 
+import io.github.taylan1477.massvideocutter.util.AppSettings;
+
 import java.io.File;
 import java.util.List;
 
@@ -14,18 +16,18 @@ public class BatchProcessFacade {
     }
 
     /**
-     * Seçilen dosyaları topluca işler.
+     * Process all selected files in batch.
      *
-     * @param files       Kırpılacak dosyalar.
-     * @param startSec    Başlangıç zamanı (saniye).
-     * @param endSec      Bitiş zamanı (saniye).
-     * @param callback    Her dosya tamamlandığında çağrılacak.
+     * @param files       Files to trim
+     * @param startSec    Start time (seconds)
+     * @param endSec      End time (seconds)
+     * @param callback    Called when each file is processed
      */
     public void processAll(List<File> files, double startSec, double endSec, BatchCallback callback) {
         for (File file : files) {
             taskManager.submit(() -> {
                 String input  = file.getAbsolutePath();
-                String output = input.replace(".", "_cut.");
+                String output = AppSettings.getInstance().getOutputPath(input);
                 boolean ok    = trimFacade.trimVideo(input, output, startSec, endSec);
                 callback.onFileProcessed(file, ok, output);
             });
