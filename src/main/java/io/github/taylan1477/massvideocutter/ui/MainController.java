@@ -2,6 +2,10 @@ package io.github.taylan1477.massvideocutter.ui;
 
 import io.github.taylan1477.massvideocutter.core.*;
 import io.github.taylan1477.massvideocutter.core.ffmpeg.FFmpegWrapper;
+import io.github.taylan1477.massvideocutter.core.trimdb.EpisodeMatcher;
+import io.github.taylan1477.massvideocutter.core.trimdb.RecipeManager;
+import io.github.taylan1477.massvideocutter.model.EpisodeTrim;
+import io.github.taylan1477.massvideocutter.model.TrimRecipe;
 import io.github.taylan1477.massvideocutter.util.AppSettings;
 import io.github.taylan1477.massvideocutter.util.ProgressUpdater;
 import org.slf4j.Logger;
@@ -54,6 +58,7 @@ public class MainController {
     @FXML private Label startTimeLabel;
     @FXML private Label currentTimeLabel;
     @FXML private Label endTimeLabel;
+    @FXML private Button btnPlayPause;
 
     // Method selector toggle buttons
     @FXML private ToggleButton btnManual;
@@ -97,6 +102,7 @@ public class MainController {
 
         // Setup components
         setupFileListView();
+        setupInspector();
         setupDragAndDrop();
         setupMethodSelector();
         setupTimelineControl();
@@ -143,6 +149,34 @@ public class MainController {
                 // Apply cached detection results if available (Audio mode)
                 if (currentMethod == TrimMethod.AUDIO_ANALYZER && detectionResults.containsKey(newFile)) {
                     applyDetectionResult(detectionResults.get(newFile));
+                }
+            }
+        });
+    }
+
+    private void setupInspector() {
+        inspector.setCellFactory(param -> new ListCell<String>() {
+            private final javafx.scene.control.Label label = new javafx.scene.control.Label();
+            {
+                label.setWrapText(true);
+                // Keep style consistent with the theme, use padding to adjust height and alignment
+                label.setStyle("-fx-text-fill: #cccccc; -fx-padding: 8px 5px;");
+                // Bind width to ListView width so the text knows when to wrap
+                label.prefWidthProperty().bind(inspector.widthProperty().subtract(24));
+            }
+            
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    label.setText(item);
+                    setGraphic(label);
+                    setText(null);
+                    // Force minimum height to ensure it fits ~2 lines
+                    setMinHeight(50.0);
                 }
             }
         });
@@ -355,9 +389,21 @@ public class MainController {
         fileChooser.getExtensionFilters().add(
                 new FileChooser.ExtensionFilter("Video Files", "*.mp4", "*.ts", "*.mkv", "*.avi", "*.mov")
         );
+        
+        String lastDirStr = AppSettings.getInstance().getLastOpenedDirectory();
+        if (lastDirStr != null && !lastDirStr.isEmpty()) {
+            File lastDir = new File(lastDirStr);
+            if (lastDir.exists() && lastDir.isDirectory()) {
+                fileChooser.setInitialDirectory(lastDir);
+            }
+        }
+        
         List<File> selectedFiles = fileChooser.showOpenMultipleDialog(new Stage());
 
-        if (selectedFiles != null) {
+        if (selectedFiles != null && !selectedFiles.isEmpty()) {
+            AppSettings.getInstance().setLastOpenedDirectory(selectedFiles.get(0).getParentFile().getAbsolutePath());
+            AppSettings.getInstance().save();
+            
             for (File file : selectedFiles) {
                 if (!fileListView.getItems().contains(file)) {
                     fileListView.getItems().add(file);
@@ -437,6 +483,17 @@ public class MainController {
                 double current = newTime.toSeconds();
                 timelineControl.setCurrentTime(current);
                 currentTimeLabel.setText(formatTime(current) + " / " + formatTime(duration));
+            });
+
+            // Update Play/Pause button UI when state changes
+            mediaPlayer.statusProperty().addListener((obs, oldStatus, newStatus) -> {
+                if (btnPlayPause != null) {
+                    if (newStatus == MediaPlayer.Status.PLAYING) {
+                        btnPlayPause.setText("⏸"); // Pause symbol
+                    } else {
+                        btnPlayPause.setText("▶"); // Play symbol
+                    }
+                }
             });
         });
 
@@ -796,6 +853,134 @@ public class MainController {
             settingsStage.showAndWait();
         } catch (Exception e) {
             logger.error("Failed to open Settings dialog", e);
+        }
+    }
+
+    @FXML
+    private void handleExportRecipe() {
+        Map<File, VolumeAnalyzer.IntroOutroResult> exportData = new java.util.HashMap<>(detectionResults);
+
+        // Fallback: If empty, use the current manual trim on the active video
+        if (exportData.isEmpty()) {
+            File selectedFile = fileListView.getSelectionModel().getSelectedItem();
+            if (selectedFile != null && mediaPlayer != null) {
+                double duration = mediaPlayer.getTotalDuration().toSeconds();
+                double start = timelineControl.getStartMarker();
+                double end = timelineControl.getEndMarker();
+                if (end == 0) end = duration;
+                
+                VolumeAnalyzer.IntroOutroResult mockResult = new VolumeAnalyzer.IntroOutroResult(
+                    0, start, end, duration, start, end, duration
+                );
+                exportData.put(selectedFile, mockResult);
+            }
+        }
+
+        if (exportData.isEmpty()) {
+            infoLabel.setText("No analysis results or active video to export.");
+            return;
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/io/github/taylan1477/massvideocutter/export_dialog.fxml"));
+            Parent root = loader.load();
+            
+            ExportDialogController controller = loader.getController();
+            controller.initData(exportData);
+
+            Stage stage = new Stage();
+            stage.setTitle("Export Trim Recipe");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.setScene(new Scene(root));
+            stage.setResizable(false);
+            
+            // Set dark theme
+            stage.getScene().getStylesheets().add(Objects.requireNonNull(getClass().getResource("/io/github/taylan1477/massvideocutter/css/style.css")).toExternalForm());
+            
+            stage.showAndWait();
+
+            if (controller.isConfirmed()) {
+                TrimRecipe recipe = controller.getRecipe();
+                
+                FileChooser fileChooser = new FileChooser();
+                fileChooser.setTitle("Save Trim Recipe");
+                fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Trim Recipe (*.trimrecipe)", "*.trimrecipe"));
+                fileChooser.setInitialFileName(recipe.getSeries().replaceAll("[^a-zA-Z0-9.-]", "_") + ".trimrecipe");
+                
+                File dest = fileChooser.showSaveDialog(fileListView.getScene().getWindow());
+                if (dest != null) {
+                    RecipeManager manager = new RecipeManager();
+                    manager.exportRecipe(dest, recipe);
+                    infoLabel.setText("Recipe exported successfully!");
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Failed to export recipe", e);
+            infoLabel.setText("Error exporting recipe.");
+        }
+    }
+
+    @FXML
+    private void handleImportRecipe() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open Trim Recipe");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Trim Recipe (*.trimrecipe)", "*.trimrecipe"),
+                new FileChooser.ExtensionFilter("JSON Files (*.json)", "*.json")
+        );
+
+        File source = fileChooser.showOpenDialog(fileListView.getScene().getWindow());
+        if (source != null) {
+            try {
+                RecipeManager manager = new RecipeManager();
+                TrimRecipe recipe = manager.importRecipe(source);
+                EpisodeMatcher matcher = new EpisodeMatcher();
+                
+                int matchedCount = 0;
+                
+                for (File file : fileListView.getItems()) {
+                    try {
+                        double duration = VolumeAnalyzer.getVideoDuration(file.getAbsolutePath());
+                        var matchOpt = matcher.match(file, duration, recipe.getEpisodes());
+                        
+                        if (matchOpt.isPresent()) {
+                            EpisodeTrim matchedEp = matchOpt.get();
+                            
+                            // Convert back to IntroOutroResult format for detectionResults
+                            double introStart = matchedEp.getIntroStart() != null ? matchedEp.getIntroStart() : -1;
+                            double introEnd = matchedEp.getIntroEnd() != null ? matchedEp.getIntroEnd() : -1;
+                            double outroStart = matchedEp.getOutroStart() != null ? matchedEp.getOutroStart() : -1;
+                            double outroEnd = matchedEp.getOutroEnd() != null ? matchedEp.getOutroEnd() : -1;
+                            
+                            double trimStart = (introEnd != -1) ? introEnd : 0;
+                            double trimEnd = (outroStart != -1) ? outroStart : duration;
+                            
+                            VolumeAnalyzer.IntroOutroResult result = new VolumeAnalyzer.IntroOutroResult(
+                                introStart, introEnd, outroStart, outroEnd, trimStart, trimEnd, duration
+                            );
+                            
+                            detectionResults.put(file, result);
+                            inspector.getItems().add(file.getName() + ": Matched Ep " + matchedEp.getEp());
+                            matchedCount++;
+                            
+                            // If this is the currently selected file, apply the new result immediately
+                            if (file.equals(fileListView.getSelectionModel().getSelectedItem())) {
+                                applyDetectionResult(result);
+                            }
+                        }
+                    } catch (Exception ex) {
+                        logger.error("Error matching file: {}", file.getName(), ex);
+                    }
+                }
+                
+                infoLabel.setText(String.format("Imported recipe: Matched %d/%d files.", matchedCount, fileListView.getItems().size()));
+                currentMethod = TrimMethod.AUDIO_ANALYZER; // Switch to audio analyzer mode to view results
+                methodGroup.selectToggle(btnAudio);
+                
+            } catch (Exception e) {
+                logger.error("Failed to import recipe", e);
+                infoLabel.setText("Error importing recipe.");
+            }
         }
     }
 }

@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taylan Özgür Özdemir - Software Engineer & Game Developer</title>
+    <style>
+        /* Reset & Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e0e0;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Header & Navigation */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(12, 12, 12, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 2rem;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: #e0e0e0;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #ff6b6b;
+        }
+
+        /* Hero Section */
+        .hero {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background:
+                radial-gradient(circle at 20% 80%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+                radial-gradient(circle at 40% 40%, rgba(120, 219, 255, 0.3) 0%, transparent 50%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><radialGradient id="a" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="%23ff6b6b" stop-opacity="0.1"/><stop offset="100%" stop-color="%234ecdc4" stop-opacity="0"/></radialGradient></defs><circle cx="20" cy="20" r="2" fill="url(%23a)"><animate attributeName="r" values="2;3;2" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0.5;1" dur="3s" repeatCount="indefinite"/></circle></svg>') repeat;
+            animation: float 20s infinite linear;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            100% {
+                transform: translateY(-100px);
+            }
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                filter: drop-shadow(0 0 20px #ff6b6b);
+            }
+
+            to {
+                filter: drop-shadow(0 0 30px #4ecdc4);
+            }
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .cta-button {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+        }
+
+        .cta-button:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(255, 107, 107, 0.6);
+        }
+
+        /* Sections */
+        section {
+            padding: 5rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* About Section */
+        .about-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .profile-img {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid #ff6b6b;
+            box-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+            transition: all 0.3s ease;
+        }
+
+        .profile-img:hover {
+            transform: rotate(5deg) scale(1.05);
+            box-shadow: 0 0 50px rgba(255, 107, 107, 0.8);
+        }
+
+        /* Skills Grid */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .skill-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .skill-card:hover {
+            transform: translateY(-10px) scale(1.05);
+            background: rgba(255, 107, 107, 0.1);
+            border-color: #ff6b6b;
+            box-shadow: 0 20px 40px rgba(255, 107, 107, 0.3);
+        }
+
+        .skill-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Projects */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .project-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .project-card:hover::before {
+            left: 100%;
+        }
+
+        .project-card:hover {
+            transform: translateY(-15px) rotateX(5deg);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5);
+            border-color: #ff6b6b;
+        }
+
+        .project-title {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #ff6b6b;
+        }
+
+        .project-tech {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .tech-tag {
+            background: rgba(78, 205, 196, 0.2);
+            color: #4ecdc4;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+
+        /* Contact */
+        .contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .contact-item {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            border-radius: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .contact-item:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 107, 107, 0.1);
+            border-color: #ff6b6b;
+        }
+
+        /* Footer */
+        footer {
+            background: #0c0c0c;
+            text-align: center;
+            padding: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Scroll Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .about-content {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-links {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navigation -->
+    <header>
+        <nav>
+            <div class="logo">Taylan Özdemir</div>
+            <ul class="nav-links">
+                <li><a href="#about">Hakkımda</a></li>
+                <li><a href="#skills">Yetenekler</a></li>
+                <li><a href="#projects">Projeler</a></li>
+                <li><a href="#contact">İletişim</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <h1>Taylan Özgür Özdemir</h1>
+        <p class="hero-subtitle">Software Engineer & Game Developer</p>
+        <button class="cta-button" onclick="scrollToSection('about')">Projelerimi Gör</button>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="fade-in">
+        <h2 class="section-title">Hakkımda</h2>
+        <div class="about-content">
+            <img src="https://via.placeholder.com/250x250/1a1a2e/ff6b6b?text=Taylan" alt="Taylan Özgür Özdemir"
+                class="profile-img">
+            <div>
+                <h3>Software Engineer & Game Developer</h3>
+                <p><strong>📧 Email:</strong> <a href="mailto:taylan147701@gmail.com">taylan147701@gmail.com</a></p>
+                <p><strong>📱 Phone:</strong> +90 541 262 3184</p>
+                <p><strong>🎓 Eğitim:</strong> İnönü Üniversitesi, Bilgisayar Mühendisliği (2021-2025)</p>
+                <p><strong>💼 Deneyim:</strong> Game Developer @ SoloRota, Ankara (Temmuz 2025 - Ocak 2026)</p>
+                <p><strong>🧠 MBTI:</strong> INTP | <strong>🌍 Diller:</strong> English (C1), Japanese (A2)</p>
+                <p>C#, Python ve Java uzmanı olarak Unity tabanlı oyunlar ve masaüstü uygulamaları geliştiriyorum.
+                    Modüler mimariler, OOP prensipleri ve algoritma optimizasyonu konusunda uzmanım.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills" class="fade-in">
+        <h2 class="section-title">Teknik Yetenekler</h2>
+        <div class="skills-grid">
+            <div class="skill-card">
+                <div class="skill-icon">🎮</div>
+                <h3>Unity & C#</h3>
+                <p>Oyun geliştirme uzmanı</p>
+            </div>
+            <div class="skill-card">
+                <div class="skill-icon">🐍</div>
+                <h3>Python</h3>
+                <p>Backend & Otomasyon</p>
+            </div>
+            <div class="skill-card">
+                <div class="skill-icon">☕</div>
+                <h3>Java</h3>
+                <p>Masaüstü Uygulamalar</p>
+            </div>
+            <div class="skill-card">
+                <div class="skill-icon">⚙️</div>
+                <h3>OOP & Algoritmalar</h3>
+                <p>Modüler Mimariler</p>
+            </div>
+            <div class="skill-card">
+                <div class="skill-icon">📱</div>
+                <h3>Mobile Games</h3>
+                <p>Mobil Oyun Geliştirme</p>
+            </div>
+            <div class="skill-card">
+                <div class="skill-icon">👁️</div>
+                <h3>Computer Vision</h3>
+                <p>Görüntü İşleme</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Projects Section -->
+    <section id="projects" class="fade-in">
+        <h2 class="section-title">Öne Çıkan Projeler</h2>
+        <div class="projects-grid">
+            <div class="project-card">
+                <h3 class="project-title">MassVCutter</h3>
+                <div class="project-tech">
+                    <span class="tech-tag">Java</span>
+                    <span class="tech-tag">JavaFX</span>
+                    <span class="tech-tag">FFmpeg</span>
+                </div>
+                <p>Video kesme uygulaması. Intro/outro segmentlerini otomatik batch işleme yapar. Modüler OOP mimarisi
+                    ile tasarlandı.</p>
+                <a href="https://github.com/taylan1477" target="_blank" class="cta-button"
+                    style="margin-top: 1rem; display: inline-block;">GitHub</a>
+            </div>
+
+            <div class="project-card">
+                <h3 class="project-title">EvoluCat</h3>
+                <div class="project-tech">
+                    <span class="tech-tag">Unity 2D</span>
+                    <span class="tech-tag">C#</span>
+                </div>
+                <p>Metroidvania platformer. Telekinezi mekanikleri, multi-slot save sistemi ve bulmaca çözme içerir.</p>
+                <a href="https://github.com/taylan1477" target="_blank" class="cta-button"
+                    style="margin-top: 1rem; display: inline-block;">GitHub</a>
+            </div>
+
+            <div class="project-card">
+                <h3 class="project-title">CampusTycoon</h3>
+                <div class="project-tech">
+                    <span class="tech-tag">Unity 2D</span>
+                    <span class="tech-tag">ScriptableObjects</span>
+                </div>
+                <p>Idle-management oyunu. Karmaşık ekonomi sistemi, global buff mekanikleri ve ölçeklenebilir mimari.
+                </p>
+                <a href="https://github.com/taylan1477" target="_blank" class="cta-button"
+                    style="margin-top: 1rem; display: inline-block;">GitHub</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="fade-in">
+        <h2 class="section-title">İletişim</h2>
+        <div class="contact-grid">
+            <div class="contact-item">
+                <h3>📧 Email</h3>
+                <p><a href="mailto:taylan147701@gmail.com">taylan147701@gmail.com</a></p>
+            </div>
+            <div class="contact-item">
+                <h3>📱 Telefon</h3>
+                <p>+90 541 262 3184</p>
+            </div>
+            <div class="contact-item">
+                <h3>💻 GitHub</h3>
+                <a href="https://github.com/taylan1477" target="_blank">github.com/taylan1477</a>
+            </div>
+            <div class="contact-item">
+                <h3>💼 LinkedIn</h3>
+                <a href="https://linkedin.com/in/taylan1477" target="_blank">linkedin.com/in/taylan1477</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2026 Taylan Özgür Özdemir. Tüm hakları saklıdır. | Dota 2, RHCP & Attack on Titan aşığı INTP 🧠</p>
+    </footer>
+
+    <script>
+        // Smooth scrolling
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const header = document.querySelector('header');
+            if (window.scrollY > 100) {
+                header.style.background = 'rgba(12, 12, 12, 0.98)';
+            } else {
+                header.style.background = 'rgba(12, 12, 12, 0.95)';
+            }
+        });
+
+        // Scroll animations
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Typing effect for hero title (optional enhancement)
+        const heroTitle = document.querySelector('.hero h1');
+        const originalText = heroTitle.textContent;
+        let i = 0;
+        function typeWriter() {
+            if (i < originalText.length) {
+                heroTitle.textContent = originalText.slice(0, i + 1);
+                i++;
+                setTimeout(typeWriter, 100);
+            }
+        }
+        // Uncomment to enable: typeWriter();
+    </script>
+</body>
+
+</html>

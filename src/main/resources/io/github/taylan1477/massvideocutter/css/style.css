@@ -464,7 +464,7 @@
 .playback-button-medium {
     -fx-background-color: #333333;
     -fx-text-fill: #cccccc;
-    -fx-font-size: 14px;
+    -fx-font-size: 21px;
     -fx-padding: 6px 10px;
     -fx-cursor: hand;
     -fx-background-radius: 18px;
@@ -480,7 +480,7 @@
 .playback-button-main-medium {
     -fx-background-color: linear-gradient(to bottom, #FFD700, #FFA500);
     -fx-text-fill: #000000;
-    -fx-font-size: 16px;
+    -fx-font-size: 24px;
     -fx-font-weight: bold;
     -fx-padding: 8px 12px;
     -fx-cursor: hand;
@@ -498,7 +498,7 @@
 .marker-button-medium {
     -fx-background-color: linear-gradient(to bottom, #FFD700, #FFA500);
     -fx-text-fill: #000000;
-    -fx-font-size: 14px;
+    -fx-font-size: 21px;
     -fx-font-weight: bold;
     -fx-padding: 6px 10px;
     -fx-background-radius: 6px;

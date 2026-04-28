@@ -24,6 +24,7 @@ public class AppSettings {
     // Settings fields
     private String outputDirectory = ""; // empty = same folder as source with _trimmed subfolder
     private String ffmpegPath = "";      // empty = use default
+    private String lastOpenedDirectory = "";
 
     private AppSettings() {}
 
@@ -46,18 +47,28 @@ public class AppSettings {
         String nameWithoutExt = dotIdx > 0 ? baseName.substring(0, dotIdx) : baseName;
         String ext = dotIdx > 0 ? baseName.substring(dotIdx) : ".mp4";
 
-        String trimmedName = nameWithoutExt + "_trimmed" + ext;
+        File targetDir;
+        String baseTargetName;
 
         if (outputDirectory != null && !outputDirectory.isEmpty()) {
             // Use configured output directory
-            File outDir = new File(outputDirectory);
-            if (!outDir.exists()) outDir.mkdirs();
-            return new File(outDir, trimmedName).getAbsolutePath();
+            targetDir = new File(outputDirectory);
+            if (!targetDir.exists()) targetDir.mkdirs();
+            baseTargetName = nameWithoutExt + "_trimmed";
         } else {
-            // Default: save next to original file with _cut suffix (like previous behavior)
-            String oldStyleName = nameWithoutExt + "_cut" + ext;
-            return new File(inputFile.getParentFile(), oldStyleName).getAbsolutePath();
+            // Default: save next to original file
+            targetDir = inputFile.getParentFile();
+            baseTargetName = nameWithoutExt + "_cut";
         }
+
+        File outFile = new File(targetDir, baseTargetName + ext);
+        int counter = 1;
+        while (outFile.exists()) {
+            outFile = new File(targetDir, baseTargetName + "_" + counter + ext);
+            counter++;
+        }
+
+        return outFile.getAbsolutePath();
     }
 
     public void save() {
@@ -69,7 +80,8 @@ public class AppSettings {
             // Simple JSON manually (no dependency needed)
             String json = "{\n" +
                     "  \"outputDirectory\": \"" + escapeJson(outputDirectory) + "\",\n" +
-                    "  \"ffmpegPath\": \"" + escapeJson(ffmpegPath) + "\"\n" +
+                    "  \"ffmpegPath\": \"" + escapeJson(ffmpegPath) + "\",\n" +
+                    "  \"lastOpenedDirectory\": \"" + escapeJson(lastOpenedDirectory) + "\"\n" +
                     "}";
 
             Files.writeString(CONFIG_FILE, json);
@@ -89,6 +101,7 @@ public class AppSettings {
             String json = Files.readString(CONFIG_FILE);
             outputDirectory = extractJsonValue(json, "outputDirectory");
             ffmpegPath = extractJsonValue(json, "ffmpegPath");
+            lastOpenedDirectory = extractJsonValue(json, "lastOpenedDirectory");
             logger.info("Settings loaded from: {}", CONFIG_FILE);
         } catch (IOException e) {
             logger.error("Failed to load settings", e);
@@ -120,4 +133,7 @@ public class AppSettings {
 
     public String getFfmpegPath() { return ffmpegPath; }
     public void setFfmpegPath(String path) { this.ffmpegPath = path != null ? path : ""; }
+
+    public String getLastOpenedDirectory() { return lastOpenedDirectory; }
+    public void setLastOpenedDirectory(String dir) { this.lastOpenedDirectory = dir != null ? dir : ""; }
 }

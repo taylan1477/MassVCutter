@@ -170,12 +170,14 @@ CONTRIBUTOR                         CLOUD                          CONSUMER
      Hours of work                 Shared once                   Zero analysis
 ```
 
-### Trim Recipe Structure
+### Trim Recipe Structure (JSON via Jackson)
 
 ```json
 {
+  "version": 1,
   "series": "One Piece",
-  "contributor": "@anime_master",
+  "description": "Season 1 to Wano Arc",
+  "contributor": "@taylan1477",
   "episodes": 1200,
   "recipe": [
     { "ep": 1, "intro": [0, 90], "outro": [1340, 1430], "duration": 1430.5 },
@@ -190,9 +192,9 @@ User filenames may differ. TrimDB matches episodes by:
 
 | Method | Reliability | Speed |
 |--------|-------------|-------|
-| Video Duration | Medium | ⚡ Instant |
-| Audio Fingerprint | High | 🐢 1-2s |
-| Episode Number (regex) | Low | ⚡ Instant |
+| Video Duration (±2s tolerance) | High | ⚡ Instant |
+| Episode Number (Regex e.g. E01, - 05) | Medium | ⚡ Instant |
+| Combined (Duration + Regex) | Very High | ⚡ Instant |
 
 ### Features
 

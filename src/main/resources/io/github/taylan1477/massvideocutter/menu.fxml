@@ -28,6 +28,9 @@
          <MenuBar fx:id="menuBar" maxHeight="-Infinity" minHeight="-Infinity" prefHeight="26.0">
             <Menu mnemonicParsing="false" text="File">
                <MenuItem mnemonicParsing="false" text="Open" onAction="#handleImportButtonAction" />
+               <SeparatorMenuItem />
+               <MenuItem mnemonicParsing="false" text="Import Trim Recipe..." onAction="#handleImportRecipe" />
+               <MenuItem mnemonicParsing="false" text="Export Trim Recipe..." onAction="#handleExportRecipe" />
                <MenuItem mnemonicParsing="false" text="Close" />
             </Menu>
             <Menu mnemonicParsing="false" text="Edit">

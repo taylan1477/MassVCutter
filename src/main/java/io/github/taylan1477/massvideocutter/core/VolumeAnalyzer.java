@@ -29,7 +29,7 @@ public class VolumeAnalyzer {
     /**
      * Get video duration using ffprobe
      */
-    private double getVideoDuration(String videoPath) throws Exception {
+    public static double getVideoDuration(String videoPath) throws Exception {
         List<String> cmd = List.of(
                 FFPROBE_PATH,
                 "-v", "error",
@@ -277,11 +277,11 @@ public class VolumeAnalyzer {
         logger.info("TRIM: {:.0f}s - {:.0f}s", trimStart, trimEnd);
 
         return new IntroOutroResult(
-                intro != null ? intro.startSecond : 0,
-                intro != null ? intro.endSecond : 0,
+                intro != null ? intro.startSecond : -1,
+                intro != null ? intro.endSecond : -1,
                 outro != null ? outro.startSecond : -1,
                 outro != null ? outro.endSecond : -1,
-                trimStart, trimEnd
+                trimStart, trimEnd, videoDuration
         );
     }
 
@@ -304,15 +304,17 @@ public class VolumeAnalyzer {
         public final double outroEnd;
         public final double recommendedTrimStart;
         public final double recommendedTrimEnd;
+        public final double videoDuration;
 
         public IntroOutroResult(double introStart, double introEnd, double outroStart, double outroEnd,
-                                double trimStart, double trimEnd) {
+                                double trimStart, double trimEnd, double videoDuration) {
             this.introStart = introStart;
             this.introEnd = introEnd;
             this.outroStart = outroStart;
             this.outroEnd = outroEnd;
             this.recommendedTrimStart = trimStart;
             this.recommendedTrimEnd = trimEnd;
+            this.videoDuration = videoDuration;
         }
     }
 }
