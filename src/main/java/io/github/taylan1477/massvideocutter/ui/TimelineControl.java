@@ -392,7 +392,14 @@ public class TimelineControl extends Pane {
     public DoubleProperty endMarkerProperty() { return endMarker; }
 
     public double getDuration() { return duration.get(); }
-    public void setDuration(double value) { duration.set(value); endMarker.set(value); }
+    public void setDuration(double value) {
+        duration.set(value);
+        // EndMarker'ı sadece geçersizse sıfırla (0, negatif, veya mevcut süreden büyükse)
+        // Kaydedilmiş bir değer varsa onu koru
+        if (endMarker.get() <= 0 || endMarker.get() > value) {
+            endMarker.set(value);
+        }
+    }
 
     public double getCurrentTime() { return currentTime.get(); }
     public void setCurrentTime(double value) { currentTime.set(value); }

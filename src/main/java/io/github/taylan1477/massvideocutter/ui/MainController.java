@@ -72,11 +72,16 @@ public class MainController {
     private BatchProcessFacade batchFacade;
     private Map<TrimMethod, TrimStrategy> strategies;
 
+    // Son açılan klasör hafızası (Desktop varsayılan)
+    private static File lastRecipeDirectory = new File(System.getProperty("user.home"), "Desktop");
+
     // Custom timeline control (with integrated waveform)
     private TimelineControl timelineControl;
 
     // State
     private TrimMethod currentMethod = TrimMethod.MANUAL;
+    // Guard flag: marker'lar programatik set edilirken saveCurrentTrimToMemory()'nin tetiklenmemesi için
+    private boolean isRestoringMarkers = false;
 
     // Supported video extensions
     private static final List<String> VIDEO_EXTENSIONS = List.of(
@@ -110,6 +115,24 @@ public class MainController {
     }
 
     private void setupFileListView() {
+        fileListView.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.MULTIPLE);
+        
+        fileListView.setOnKeyPressed(event -> {
+            if (event.isControlDown() && event.getCode() == javafx.scene.input.KeyCode.A) {
+                fileListView.getSelectionModel().selectAll();
+                event.consume();
+            } else if (event.getCode() == javafx.scene.input.KeyCode.DELETE || event.getCode() == javafx.scene.input.KeyCode.Q) {
+                var selected = new java.util.ArrayList<>(fileListView.getSelectionModel().getSelectedItems());
+                if (!selected.isEmpty()) {
+                    fileListView.getItems().removeAll(selected);
+                    selected.forEach(detectionResults::remove);
+                    infoLabel.setText("Removed " + selected.size() + " files");
+                    fileListView.getSelectionModel().clearSelection();
+                }
+                event.consume();
+            }
+        });
+
         fileListView.setCellFactory(param -> new ListCell<File>() {
             @Override
             protected void updateItem(File item, boolean empty) {
@@ -121,10 +144,17 @@ public class MainController {
                     setText(item.getName());
                     
                     ContextMenu contextMenu = new ContextMenu();
-                    MenuItem deleteItem = new MenuItem("Remove from List (Q/Del)");
+                    MenuItem deleteItem = new MenuItem("Remove Selected (Q/Del)");
                     deleteItem.setOnAction(e -> {
-                        fileListView.getItems().remove(item);
-                        infoLabel.setText("Removed: " + item.getName());
+                        var selected = new java.util.ArrayList<>(fileListView.getSelectionModel().getSelectedItems());
+                        if (!selected.contains(item)) {
+                            selected.clear();
+                            selected.add(item);
+                        }
+                        fileListView.getItems().removeAll(selected);
+                        selected.forEach(detectionResults::remove);
+                        infoLabel.setText("Removed " + selected.size() + " files");
+                        fileListView.getSelectionModel().clearSelection();
                     });
                     
                     MenuItem openLocItem = new MenuItem("Open File Location");
@@ -135,21 +165,25 @@ public class MainController {
                             logger.error("Failed to open file location", ex);
                         }
                     });
+
+                    MenuItem applyToAllItem = new MenuItem("\uD83D\uDCCB Apply trim settings to all");
+                    applyToAllItem.setOnAction(e -> applyCurrentTrimToAll());
                     
-                    contextMenu.getItems().addAll(deleteItem, new SeparatorMenuItem(), openLocItem);
+                    contextMenu.getItems().addAll(deleteItem, new SeparatorMenuItem(), applyToAllItem, new SeparatorMenuItem(), openLocItem);
                     setContextMenu(contextMenu);
                 }
             }
         });
 
         fileListView.getSelectionModel().selectedItemProperty().addListener((obs, oldFile, newFile) -> {
+            // 1. Ayrılmadan önce eski videonun trim ayarlarını kaydet
+            if (oldFile != null) {
+                saveCurrentTrimForFile(oldFile);
+            }
+
+            // 2. Yeni videoya geç (restoration setOnReady içinde gerçekleşecek)
             if (newFile != null) {
                 playVideo(newFile);
-                
-                // Apply cached detection results if available (Audio mode)
-                if (currentMethod == TrimMethod.AUDIO_ANALYZER && detectionResults.containsKey(newFile)) {
-                    applyDetectionResult(detectionResults.get(newFile));
-                }
             }
         });
     }
@@ -337,18 +371,22 @@ public class MainController {
      * Apply detection result to timeline
      */
     private void applyDetectionResult(VolumeAnalyzer.IntroOutroResult result) {
-        timelineControl.setStartMarker(result.recommendedTrimStart);
-        timelineControl.setEndMarker(result.recommendedTrimEnd);
-        
-        startTimeLabel.setText("START: " + formatTime(result.recommendedTrimStart));
-        endTimeLabel.setText("END: " + formatTime(result.recommendedTrimEnd));
-        
-        String info = String.format("Intro: 0-%ss | Outro: %s | Trim: %s-%s",
-                formatTime(result.introEnd),
-                result.outroStart > 0 ? formatTime(result.outroStart) + "s" : "N/A",
-                formatTime(result.recommendedTrimStart),
-                formatTime(result.recommendedTrimEnd));
-        infoLabel.setText(info);
+        isRestoringMarkers = true;
+        try {
+            timelineControl.setStartMarker(result.recommendedTrimStart);
+            timelineControl.setEndMarker(result.recommendedTrimEnd);
+            startTimeLabel.setText("START: " + formatTime(result.recommendedTrimStart));
+            endTimeLabel.setText("END: " + formatTime(result.recommendedTrimEnd));
+
+            String info = String.format("Intro: 0-%ss | Outro: %s | Trim: %s-%s",
+                    formatTime(result.introEnd),
+                    result.outroStart > 0 ? formatTime(result.outroStart) + "s" : "N/A",
+                    formatTime(result.recommendedTrimStart),
+                    formatTime(result.recommendedTrimEnd));
+            infoLabel.setText(info);
+        } finally {
+            isRestoringMarkers = false;
+        }
     }
 
     private void updateUIForMethod(TrimMethod method) {
@@ -368,18 +406,96 @@ public class MainController {
         timelineControl.setOnStartMarkerChanged(() -> {
             double time = timelineControl.getStartMarker();
             startTimeLabel.setText("START: " + formatTime(time));
+            // Sadece kullanıcı manuel hareket ettirdiğinde kaydet, programatik restore sırasında değil
+            if (!isRestoringMarkers) saveCurrentTrimToMemory();
         });
 
         timelineControl.setOnEndMarkerChanged(() -> {
             double time = timelineControl.getEndMarker();
             endTimeLabel.setText("END: " + formatTime(time));
+            // Sadece kullanıcı manuel hareket ettirdiğinde kaydet, programatik restore sırasında değil
+            if (!isRestoringMarkers) saveCurrentTrimToMemory();
         });
 
         timelineControl.setOnSeek(() -> {
             if (mediaPlayer != null) {
-                mediaPlayer.seek(Duration.seconds(timelineControl.getCurrentTime()));
+                double time = timelineControl.getCurrentTime();
+                mediaPlayer.seek(javafx.util.Duration.seconds(time));
+                currentTimeLabel.setText(formatTime(time) + " / " + formatTime(timelineControl.getDuration()));
             }
         });
+    }
+
+    /**
+     * O an seçili videonun güncel marker ayarlarını detectionResults hafızasına kaydeder.
+     * Hem manual ince ayar hem de Audio Analyzer ile çalışır.
+     */
+    private void saveCurrentTrimToMemory() {
+        File selectedFile = fileListView.getSelectionModel().getSelectedItem();
+        if (selectedFile == null) return;
+        saveCurrentTrimForFile(selectedFile);
+    }
+
+    /**
+     * Belirtilen dosya için o anki marker değerlerini hafızaya kaydeder.
+     * Video switch sırasında oldFile için çağrılır.
+     */
+    private void saveCurrentTrimForFile(File file) {
+        if (file == null) return;
+
+        double start = timelineControl.getStartMarker();
+        double end = timelineControl.getEndMarker();
+
+        // Süreyi güvenli oku: mediaPlayer hazır değilse 0
+        double duration = 0;
+        if (mediaPlayer != null) {
+            javafx.util.Duration d = mediaPlayer.getTotalDuration();
+            if (d != null && !d.isUnknown() && !d.isIndefinite()) {
+                duration = d.toSeconds();
+            }
+        }
+
+        // end marker 0 ise ve geçerli bir süre varsa max'a eşitle
+        if (end <= 0 && duration > 0) end = duration;
+
+        VolumeAnalyzer.IntroOutroResult mockResult = new VolumeAnalyzer.IntroOutroResult(
+                0, start, end, duration, start, end, duration
+        );
+        detectionResults.put(file, mockResult);
+    }
+
+    /**
+     * O anki aktif videonun trim ayarlarını listedeki TÜM videolara uygular.
+     * Context Menu'deki "Apply trim settings to all" seçeneği bunu çağırır.
+     */
+    private void applyCurrentTrimToAll() {
+        File selectedFile = fileListView.getSelectionModel().getSelectedItem();
+        if (selectedFile == null || mediaPlayer == null) {
+            infoLabel.setText("Please select a video first.");
+            return;
+        }
+
+        double start = timelineControl.getStartMarker();
+        double end = timelineControl.getEndMarker();
+
+        List<File> allFiles = fileListView.getItems();
+        for (File file : allFiles) {
+            // Her video için video süresini bilmeden mock kayıt oluştur;
+            // gerçek süre sadece aktif video için bilinir, diğerleri için 0 koyuyoruz.
+            double duration = file.equals(selectedFile)
+                    ? mediaPlayer.getTotalDuration().toSeconds()
+                    : 0;
+
+            VolumeAnalyzer.IntroOutroResult result = new VolumeAnalyzer.IntroOutroResult(
+                    0, start, end, duration, start, end, duration
+            );
+            detectionResults.put(file, result);
+        }
+
+        String msg = String.format("\uD83D\uDCCB Applied [%s – %s] to %d file(s)",
+                formatTime(start), formatTime(end), allFiles.size());
+        inspector.getItems().add(msg);
+        infoLabel.setText("Settings applied to " + allFiles.size() + " file(s)");
     }
 
     @FXML
@@ -444,21 +560,27 @@ public class MainController {
         mediaPlayer.setOnReady(() -> {
             double duration = mediaPlayer.getMedia().getDuration().toSeconds();
 
-            // Update timeline control
-            timelineControl.setDuration(duration);
+            // setDuration()'yi da flag kapsamına al:
+            // setDuration() içeride setEndMarker(duration) çağırabilir,
+            // bu da saveCurrentTrimToMemory()'yi tetikler ve hafizayi bozar.
+            isRestoringMarkers = true;
+            try {
+                timelineControl.setDuration(duration);
 
-            // Apply cached detection results OR reset markers
-            if (currentMethod == TrimMethod.AUDIO_ANALYZER && detectionResults.containsKey(file)) {
-                VolumeAnalyzer.IntroOutroResult result = detectionResults.get(file);
-                timelineControl.setStartMarker(result.recommendedTrimStart);
-                timelineControl.setEndMarker(result.recommendedTrimEnd);
-                startTimeLabel.setText("START: " + formatTime(result.recommendedTrimStart));
-                endTimeLabel.setText("END: " + formatTime(result.recommendedTrimEnd));
-            } else {
-                timelineControl.setStartMarker(0);
-                timelineControl.setEndMarker(duration);
-                startTimeLabel.setText("START: 00:00");
-                endTimeLabel.setText("END: " + formatTime(duration));
+                if (detectionResults.containsKey(file)) {
+                    VolumeAnalyzer.IntroOutroResult result = detectionResults.get(file);
+                    timelineControl.setStartMarker(result.recommendedTrimStart);
+                    timelineControl.setEndMarker(result.recommendedTrimEnd);
+                    startTimeLabel.setText("START: " + formatTime(result.recommendedTrimStart));
+                    endTimeLabel.setText("END: " + formatTime(result.recommendedTrimEnd));
+                } else {
+                    timelineControl.setStartMarker(0);
+                    timelineControl.setEndMarker(duration);
+                    startTimeLabel.setText("START: 00:00");
+                    endTimeLabel.setText("END: " + formatTime(duration));
+                }
+            } finally {
+                isRestoringMarkers = false;
             }
 
             currentTimeLabel.setText("00:00 / " + formatTime(duration));
@@ -904,11 +1026,15 @@ public class MainController {
                 
                 FileChooser fileChooser = new FileChooser();
                 fileChooser.setTitle("Save Trim Recipe");
+                if (lastRecipeDirectory != null && lastRecipeDirectory.exists()) {
+                    fileChooser.setInitialDirectory(lastRecipeDirectory);
+                }
                 fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Trim Recipe (*.trimrecipe)", "*.trimrecipe"));
                 fileChooser.setInitialFileName(recipe.getSeries().replaceAll("[^a-zA-Z0-9.-]", "_") + ".trimrecipe");
                 
                 File dest = fileChooser.showSaveDialog(fileListView.getScene().getWindow());
                 if (dest != null) {
+                    lastRecipeDirectory = dest.getParentFile();
                     RecipeManager manager = new RecipeManager();
                     manager.exportRecipe(dest, recipe);
                     infoLabel.setText("Recipe exported successfully!");
@@ -924,6 +1050,9 @@ public class MainController {
     private void handleImportRecipe() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Trim Recipe");
+        if (lastRecipeDirectory != null && lastRecipeDirectory.exists()) {
+            fileChooser.setInitialDirectory(lastRecipeDirectory);
+        }
         fileChooser.getExtensionFilters().addAll(
                 new FileChooser.ExtensionFilter("Trim Recipe (*.trimrecipe)", "*.trimrecipe"),
                 new FileChooser.ExtensionFilter("JSON Files (*.json)", "*.json")
@@ -931,6 +1060,7 @@ public class MainController {
 
         File source = fileChooser.showOpenDialog(fileListView.getScene().getWindow());
         if (source != null) {
+            lastRecipeDirectory = source.getParentFile();
             try {
                 RecipeManager manager = new RecipeManager();
                 TrimRecipe recipe = manager.importRecipe(source);

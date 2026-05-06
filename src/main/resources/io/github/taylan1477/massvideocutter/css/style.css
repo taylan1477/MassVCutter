@@ -34,8 +34,18 @@
     -fx-background-color: #252525;
 }
 
+.menu-item > .label {
+    -fx-text-fill: #e0e0e0;
+}
+
+.menu-item:focused,
 .menu-item:hover {
     -fx-background-color: #FF8C00;
+}
+
+.menu-item:focused > .label,
+.menu-item:hover > .label {
+    -fx-text-fill: #000000;
 }
 
 /* ============================================
@@ -54,7 +64,8 @@
     -fx-padding: 8px;
 }
 
-.list-cell:filled:selected {
+.list-cell:filled:selected,
+.list-cell:filled:selected:hover {
     -fx-background-color: linear-gradient(to right, #FFA500, #FF8C00);
     -fx-text-fill: #000000;
     -fx-background-radius: 4px;
@@ -62,6 +73,7 @@
 
 .list-cell:filled:hover {
     -fx-background-color: #3a3a3a;
+    -fx-text-fill: #ffffff;
 }
 
 /* ============================================
