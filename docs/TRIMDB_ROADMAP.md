@@ -90,7 +90,7 @@ public class UserRating {
 
 ## 🛠️ Implementation Phases
 
-### Phase 1: Local Export/Import (Offline) 🎯 MVP
+### Phase 1: Local Export/Import (Offline) ✅ Completed
 
 **Goal:** Allow users to export/import trim recipes as JSON files without any backend.
 
@@ -108,7 +108,7 @@ public class UserRating {
 
 ---
 
-### Phase 2: Episode Matching System
+### Phase 2: Episode Matching System ✅ Completed
 
 **Goal:** Reliably match user's video files to recipe episodes even with different filenames.
 
@@ -140,7 +140,7 @@ public class EpisodeMatcher {
 
 ---
 
-### Phase 3: Cloud Backend & Online Library (TrimDatabase)
+### Phase 3: Cloud Backend & Online Library (TrimDatabase) 🚀 In Progress
 
 **Goal:** Central database where users can share, rate, and reuse trim data online, creating an open-source community library of video trimming data. This allows users to simply download a recipe and trim instantly without analyzing.
 

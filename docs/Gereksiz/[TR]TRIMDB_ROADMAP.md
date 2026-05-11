@@ -90,7 +90,7 @@ public class UserRating {
 
 ## 🛠️ Uygulama Aşamaları
 
-### Aşama 1: Yerel Dışa Aktarma/İçe Aktarma (Çevrimdışı) 🎯 MVP
+### Aşama 1: Yerel Dışa Aktarma/İçe Aktarma (Çevrimdışı) ✅ Tamamlandı
 
 **Hedef:** Kullanıcıların herhangi bir backend olmadan trim reçetelerini JSON dosyası olarak dışa/içe aktarmasına izin vermek.
 
@@ -108,7 +108,7 @@ public class UserRating {
 
 ---
 
-### Aşama 2: Bölüm Eşleştirme Sistemi
+### Aşama 2: Bölüm Eşleştirme Sistemi ✅ Tamamlandı
 
 **Hedef:** Farklı dosya adlarına sahip olsalar bile kullanıcının video dosyalarını reçetedeki bölümlerle güvenilir bir şekilde eşleştirmek.
 
@@ -140,7 +140,7 @@ public class EpisodeMatcher {
 
 ---
 
-### Aşama 3: Bulut Backend ve Çevrimiçi Kütüphane (TrimDatabase)
+### Aşama 3: Bulut Backend ve Çevrimiçi Kütüphane (TrimDatabase) 🚀 Devam Ediyor
 
 **Hedef:** Kullanıcıların trim verilerini çevrimiçi olarak paylaşabileceği, oylayabileceği ve yeniden kullanabileceği, video kırpma verilerinden oluşan açık kaynaklı bir topluluk kütüphanesi oluşturmak.
 

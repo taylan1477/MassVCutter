@@ -29,11 +29,27 @@ Bu proje, film, dizi ve anime arşivlerini düzenleyerek **zamandan ve depolamad
 - ✅ **Sürükle-Bırak** - Dosyaları uygulamaya sürükleyerek ekleme
 - ✅ **Waveform Görselleştirme** - Timeline üzerinde ses seviyelerini görme
 - ✅ **Modern Koyu Tema** - Turuncu aksan renkli şık arayüz
+- ✅ **Gelişmiş Liste Görünümü** - Çoklu seçim, durum renkleri ve dosya adı ipuçları (tooltip)
+- ✅ **Sağ Tık Menüsü** - Seçili öğeleri toplu işaretleme/sıfırlama
 - ✅ **İngilizce Arayüz** - Tüm UI elementleri İngilizce
 
 ### Geliştirme Aşamasında
 - 🚧 **Sahne Tespiti** - AI tabanlı sahne değişikliği algılama
 - 🚧 **Referans Görüntü Eşleştirme** - Intro/outro'yu görüntü benzerliği ile eşleştirme
+
+---
+
+## Group 4: TrimDB (Topluluk Kırpma Veritabanı) 🌐
+
+### Tamamlanan ✅
+- [x] **Çevrimdışı MVP** - JSON `.trimrecipe` dosyalarını dışa/içe aktarma
+- [x] **Bölüm Eşleştirme** - Süre tabanlı otomatik eşleştirme
+- [x] **Backend Altyapısı** - Spring Boot 3 + PostgreSQL sunucu kurulumu ve Docker entegrasyonu
+
+### Planlanan 📋
+- [ ] **TrimDB Tarayıcı Arayüzü** - Uygulama içinden online arama ve uygulama
+- [ ] **Bulut Depolama** - Cloudflare R2 / S3 entegrasyonu
+- [ ] **Topluluk Özellikleri** - Oylama, raporlama ve yorum sistemi
 
 ---
 
@@ -129,6 +145,16 @@ src/main/java/com/example/massvideocutter/
 - [ ] Çoklu dil desteği (TR, EN, JP)
 - [ ] GPU hızlandırmalı FFmpeg
 - [ ] Kırpma ön ayarları için bulut senkronizasyonu
+
+### Aşama 3: Bulut Backend ve Çevrimiçi Kütüphane (TrimDatabase) 🚀 Devam Ediyor 🌐
+
+#### Aşama 1: Yerel Dışa Aktarma/İçe Aktarma (Çevrimdışı) ✅ Tamamlandı** - JSON `.trimrecipe` dosyalarını dışa/içe aktarma
+-### Aşama 2: Bölüm Eşleştirme Sistemi ✅ Tamamlandı** - Süre tabanlı otomatik eşleştirme
+- [x] **Backend Altyapısı** - Spring Boot 3 + PostgreSQL sunucu kurulumu ve Docker entegrasyonu
+
+#### Planlanan 📋
+- [ ] **TrimDB Tarayıcı Arayüzü** - Uygulama içinden online arama ve uygulama
+- [ ] **Bulut Depolama** - Cloudflare R2 / S3 entegrasyonu
 
 ---
 

@@ -113,6 +113,8 @@ src/main/java/com/example/massvideocutter/
 - [x] Inspector log with analysis results
 - [x] **Settings Panel** - Custom output folder
 - [x] **Keyboard Shortcuts** - Space=play/pause, S=set start, E=set end, etc.
+- [x] **Advanced ListView** - State-aware list cells with multi-selection and filename tooltips
+- [x] **Context Menu Actions** - Batch reset markers, check/uncheck selected
 
 ### Planned 📋
 - [ ] **Progress Notifications** - System tray notifications for batch completion
@@ -126,6 +128,19 @@ src/main/java/com/example/massvideocutter/
 - [ ] **List Filtering** - Filter video list by status (Pending, Success, Error)
 
 ---
+
+## Group 4: TrimDB (Community Trim Database) 🌐
+
+### Completed ✅
+- [x] **Offline MVP** - Export/Import JSON `.trimrecipe` files
+- [x] **Episode Matching** - Duration-based video matching
+- [x] **Backend Skeleton** - Spring Boot 3 + PostgreSQL server setup (API endpoints)
+
+### Planned 📋
+- [ ] **TrimDB Browser UI** - Search and apply recipes online
+- [ ] **Cloud Storage** - Cloudflare R2 / S3 integration
+- [ ] **Community Features** - Upvote, report, and comment on recipes
+
 
 ## Group 3: Developer Experience (DX) 🛠️
 
