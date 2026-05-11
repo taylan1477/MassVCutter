@@ -76,6 +76,54 @@
     -fx-text-fill: #ffffff;
 }
 
+/* Checkbox-like checked state */
+.list-cell-checked {
+    -fx-background-color: rgba(255, 165, 0, 0.15);
+    -fx-border-color: #FFA500;
+    -fx-border-width: 0 0 0 3px;
+}
+
+.list-cell-checked > .label {
+    -fx-text-fill: #FFD580;
+}
+
+/* Processing state */
+.list-cell-processing > .label {
+    -fx-text-fill: #FFB347;
+}
+
+/* Success state */
+.list-cell-success {
+    -fx-background-color: rgba(76, 175, 80, 0.15);
+    -fx-border-color: #4CAF50;
+    -fx-border-width: 0 0 0 3px;
+}
+
+.list-cell-success > .label {
+    -fx-text-fill: #4CAF50;
+}
+
+/* Error state */
+.list-cell-error > .label {
+    -fx-text-fill: #F44336;
+}
+
+/* Force readable text color when selected (overrides state colors) */
+.list-cell:filled:selected > .label {
+    -fx-text-fill: #000000;
+}
+
+/* Combined: checked + success/error should keep border */
+.list-cell-checked.list-cell-success {
+    -fx-background-color: rgba(76, 175, 80, 0.10);
+    -fx-border-color: #4CAF50;
+}
+
+.list-cell-checked.list-cell-error {
+    -fx-background-color: rgba(244, 67, 54, 0.10);
+    -fx-border-color: #F44336;
+}
+
 /* ============================================
    MEDIA VIEW (VIDEO AREA)
    ============================================ */

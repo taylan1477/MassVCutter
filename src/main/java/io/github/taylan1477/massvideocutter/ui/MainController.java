@@ -5,7 +5,9 @@ import io.github.taylan1477.massvideocutter.core.ffmpeg.FFmpegWrapper;
 import io.github.taylan1477.massvideocutter.core.trimdb.EpisodeMatcher;
 import io.github.taylan1477.massvideocutter.core.trimdb.RecipeManager;
 import io.github.taylan1477.massvideocutter.model.EpisodeTrim;
+import io.github.taylan1477.massvideocutter.model.ProcessState;
 import io.github.taylan1477.massvideocutter.model.TrimRecipe;
+import io.github.taylan1477.massvideocutter.model.VideoItem;
 import io.github.taylan1477.massvideocutter.util.AppSettings;
 import io.github.taylan1477.massvideocutter.util.ProgressUpdater;
 import org.slf4j.Logger;
@@ -14,6 +16,7 @@ import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -21,7 +24,11 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
@@ -43,7 +50,7 @@ public class MainController {
 
     // UI Components
     @FXML private Label infoLabel;
-    @FXML private ListView<File> fileListView;
+    @FXML private ListView<VideoItem> fileListView;
     @FXML private ListView<String> inspector;
     @FXML private MenuBar menuBar;
     @FXML private ProgressBar progressBar;
@@ -116,51 +123,90 @@ public class MainController {
 
     private void setupFileListView() {
         fileListView.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.MULTIPLE);
-        
         fileListView.setOnKeyPressed(event -> {
-            if (event.isControlDown() && event.getCode() == javafx.scene.input.KeyCode.A) {
-                fileListView.getSelectionModel().selectAll();
-                event.consume();
-            } else if (event.getCode() == javafx.scene.input.KeyCode.DELETE || event.getCode() == javafx.scene.input.KeyCode.Q) {
-                var selected = new java.util.ArrayList<>(fileListView.getSelectionModel().getSelectedItems());
+            if (event.getCode() == javafx.scene.input.KeyCode.DELETE || event.getCode() == javafx.scene.input.KeyCode.Q) {
+                var selected = new ArrayList<>(fileListView.getSelectionModel().getSelectedItems());
                 if (!selected.isEmpty()) {
+                    selected.forEach(vi -> detectionResults.remove(vi.getFile()));
                     fileListView.getItems().removeAll(selected);
-                    selected.forEach(detectionResults::remove);
                     infoLabel.setText("Removed " + selected.size() + " files");
-                    fileListView.getSelectionModel().clearSelection();
                 }
                 event.consume();
             }
         });
 
-        fileListView.setCellFactory(param -> new ListCell<File>() {
+        fileListView.setCellFactory(param -> new ListCell<VideoItem>() {
+            private final HBox root = new HBox(8);
+            private final Label nameLabel = new Label();
+            private final Label stateLabel = new Label();
+            private final Region spacer = new Region();
+
+            {
+                root.setAlignment(Pos.CENTER_LEFT);
+                root.getChildren().addAll(stateLabel, nameLabel);
+                nameLabel.setMaxWidth(Double.MAX_VALUE);
+                nameLabel.setTextOverrun(javafx.scene.control.OverrunStyle.CENTER_ELLIPSIS);
+                HBox.setHgrow(nameLabel, Priority.ALWAYS);
+                stateLabel.setMinWidth(Region.USE_PREF_SIZE);
+            }
+
             @Override
-            protected void updateItem(File item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
+            protected void updateItem(VideoItem vi, boolean empty) {
+                super.updateItem(vi, empty);
+                if (empty || vi == null) {
+                    setGraphic(null);
                     setText(null);
                     setContextMenu(null);
+                    getStyleClass().removeAll("list-cell-checked", "list-cell-success", "list-cell-error", "list-cell-processing");
+                    setTooltip(null);
                 } else {
-                    setText(item.getName());
-                    
+                    updateItemVisual(vi);
+                    setGraphic(root);
+                    setText(null);
+
+                    // Context Menu
                     ContextMenu contextMenu = new ContextMenu();
+
+                    MenuItem checkItem = new MenuItem(vi.isSelected() ? "\u2611 Uncheck Selected" : "\u2610 Check Selected");
+                    checkItem.setOnAction(e -> {
+                        boolean newState = !vi.isSelected();
+                        var sel = new ArrayList<>(fileListView.getSelectionModel().getSelectedItems());
+                        if (sel.isEmpty() || !sel.contains(vi)) {
+                            sel.clear();
+                            sel.add(vi);
+                        }
+                        sel.forEach(v -> v.setSelected(newState));
+                        fileListView.refresh();
+                    });
+
+                    MenuItem checkAllItem = new MenuItem("\u2611 Check All");
+                    checkAllItem.setOnAction(e -> {
+                        fileListView.getItems().forEach(v -> v.setSelected(true));
+                        fileListView.refresh();
+                    });
+
+                    MenuItem uncheckAllItem = new MenuItem("\u2610 Uncheck All");
+                    uncheckAllItem.setOnAction(e -> {
+                        fileListView.getItems().forEach(v -> v.setSelected(false));
+                        fileListView.refresh();
+                    });
+
                     MenuItem deleteItem = new MenuItem("Remove Selected (Q/Del)");
                     deleteItem.setOnAction(e -> {
-                        var selected = new java.util.ArrayList<>(fileListView.getSelectionModel().getSelectedItems());
-                        if (!selected.contains(item)) {
-                            selected.clear();
-                            selected.add(item);
+                        var sel = new ArrayList<>(fileListView.getSelectionModel().getSelectedItems());
+                        if (!sel.contains(vi)) {
+                            sel.clear();
+                            sel.add(vi);
                         }
-                        fileListView.getItems().removeAll(selected);
-                        selected.forEach(detectionResults::remove);
-                        infoLabel.setText("Removed " + selected.size() + " files");
-                        fileListView.getSelectionModel().clearSelection();
+                        sel.forEach(v -> detectionResults.remove(v.getFile()));
+                        fileListView.getItems().removeAll(sel);
+                        infoLabel.setText("Removed " + sel.size() + " files");
                     });
-                    
+
                     MenuItem openLocItem = new MenuItem("Open File Location");
                     openLocItem.setOnAction(e -> {
                         try {
-                            java.awt.Desktop.getDesktop().open(item.getParentFile());
+                            java.awt.Desktop.getDesktop().open(vi.getFile().getParentFile());
                         } catch (Exception ex) {
                             logger.error("Failed to open file location", ex);
                         }
@@ -168,70 +214,82 @@ public class MainController {
 
                     MenuItem applyToAllItem = new MenuItem("\uD83D\uDCCB Apply trim settings to all");
                     applyToAllItem.setOnAction(e -> applyCurrentTrimToAll());
-                    
+
                     MenuItem resetItem = new MenuItem("\u21BA Reset Markers (0 to Max)");
                     resetItem.setOnAction(e -> {
-                        // Seçili videonun hafızasını temizle
-                        detectionResults.remove(item);
-                        // Eğer aktif oynatılan videoysa UI'ı da sıfırla
-                        if (item.equals(fileListView.getSelectionModel().getSelectedItem()) && mediaPlayer != null) {
+                        List<VideoItem> targetItems = fileListView.getItems().stream()
+                                .filter(VideoItem::isSelected)
+                                .collect(java.util.stream.Collectors.toList());
+                                
+                        if (targetItems.isEmpty() || !targetItems.contains(vi)) {
+                            targetItems = java.util.Collections.singletonList(vi);
+                        }
+                        
+                        for (VideoItem item : targetItems) {
+                            detectionResults.remove(item.getFile());
+                            item.setState(ProcessState.PENDING);
+                        }
+                        
+                        VideoItem currentVi = fileListView.getSelectionModel().getSelectedItem();
+                        if (targetItems.contains(currentVi) && mediaPlayer != null) {
                             double duration = mediaPlayer.getTotalDuration().toSeconds();
                             timelineControl.setStartMarker(0);
                             timelineControl.setEndMarker(duration);
                             startTimeLabel.setText("START: 00:00");
                             endTimeLabel.setText("END: " + formatTime(duration));
                         }
-                        infoLabel.setText("Markers reset for: " + item.getName());
+                        
+                        fileListView.refresh();
+                        
+                        if (targetItems.size() == 1) {
+                            infoLabel.setText("Markers reset for: " + targetItems.get(0).getName());
+                        } else {
+                            infoLabel.setText("Markers reset for " + targetItems.size() + " video(s)");
+                        }
                     });
 
                     MenuItem copyPathItem = new MenuItem("\uD83D\uDCCB Copy File Path");
                     copyPathItem.setOnAction(e -> {
                         javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
-                        content.putString(item.getAbsolutePath());
+                        content.putString(vi.getFile().getAbsolutePath());
                         javafx.scene.input.Clipboard.getSystemClipboard().setContent(content);
                         infoLabel.setText("Path copied to clipboard.");
                     });
-                    
+
                     MenuItem renameItem = new MenuItem("\u270F Rename Source File");
                     renameItem.setOnAction(e -> {
-                        TextInputDialog dialog = new TextInputDialog(item.getName());
+                        TextInputDialog dialog = new TextInputDialog(vi.getName());
                         dialog.setTitle("Rename File");
-                        dialog.setHeaderText("Rename: " + item.getName());
+                        dialog.setHeaderText("Rename: " + vi.getName());
                         dialog.setContentText("New Name:");
-                        
-                        // Apply dark theme to dialog
                         dialog.getDialogPane().getStylesheets().add(getClass().getResource("/io/github/taylan1477/massvideocutter/css/style.css").toExternalForm());
-                        
+
                         dialog.showAndWait().ifPresent(newName -> {
-                            if (newName.isEmpty() || newName.equals(item.getName())) return;
-                            
-                            File newFile = new File(item.getParentFile(), newName);
+                            if (newName.isEmpty() || newName.equals(vi.getName())) return;
+
+                            File newFile = new File(vi.getFile().getParentFile(), newName);
                             if (newFile.exists()) {
                                 infoLabel.setText("Error: A file with that name already exists.");
                                 return;
                             }
-                            
-                            // If current file is playing, release it first
-                            boolean wasActive = item.equals(fileListView.getSelectionModel().getSelectedItem());
+
+                            boolean wasActive = vi.equals(fileListView.getSelectionModel().getSelectedItem());
                             if (wasActive && mediaPlayer != null) {
                                 mediaPlayer.stop();
                                 mediaPlayer.dispose();
                                 mediaPlayer = null;
                             }
-                            
-                            if (item.renameTo(newFile)) {
-                                // Update List
-                                int index = fileListView.getItems().indexOf(item);
-                                fileListView.getItems().set(index, newFile);
-                                
-                                // Update Memory
-                                var result = detectionResults.remove(item);
+
+                            File oldFile = vi.getFile();
+                            if (oldFile.renameTo(newFile)) {
+                                var result = detectionResults.remove(oldFile);
+                                vi.setFile(newFile);
                                 if (result != null) {
                                     detectionResults.put(newFile, result);
                                 }
-                                
+                                updateItemVisual(vi);
                                 if (wasActive) {
-                                    fileListView.getSelectionModel().select(newFile);
+                                    playVideo(newFile);
                                 }
                                 infoLabel.setText("File renamed successfully.");
                             } else {
@@ -242,51 +300,52 @@ public class MainController {
 
                     MenuItem exportSingleItem = new MenuItem("\uD83D\uDCE4 Export Only This Trim");
                     exportSingleItem.setOnAction(e -> {
+                        File file = vi.getFile();
                         double duration = 0;
                         double start = 0;
                         double end = 0;
-                        
-                        if (item.equals(fileListView.getSelectionModel().getSelectedItem()) && mediaPlayer != null) {
+
+                        if (vi.equals(fileListView.getSelectionModel().getSelectedItem()) && mediaPlayer != null) {
                             duration = mediaPlayer.getTotalDuration().toSeconds();
                             start = timelineControl.getStartMarker();
                             end = timelineControl.getEndMarker();
                         } else {
-                            var res = detectionResults.get(item);
+                            var res = detectionResults.get(file);
                             if (res != null) {
                                 duration = res.videoDuration;
                                 start = res.recommendedTrimStart;
                                 end = res.recommendedTrimEnd;
                             }
                         }
-                        
+
                         if (duration == 0) {
                             try {
-                                duration = VolumeAnalyzer.getVideoDuration(item.getAbsolutePath());
+                                duration = VolumeAnalyzer.getVideoDuration(file.getAbsolutePath());
                             } catch (Exception ex) {}
                         }
-                        
+
                         if (end == 0) end = duration;
 
                         TrimRecipe recipe = new TrimRecipe();
                         recipe.setSeries("Single Export");
                         recipe.setVersion(1);
-                        
+
                         EpisodeTrim ep = new EpisodeTrim();
-                        ep.setEp(EpisodeMatcher.extractEpisodeNumber(item.getName()));
+                        ep.setEp(EpisodeMatcher.extractEpisodeNumber(file.getName()));
                         ep.setDuration(duration);
                         ep.setIntroEnd(start);
                         ep.setOutroStart(end);
                         ep.setOutroEnd(duration);
-                        
+
                         recipe.getEpisodes().add(ep);
-                        
+
                         FileChooser fileChooser = new FileChooser();
                         fileChooser.setTitle("Export Single Trim Recipe");
-                        fileChooser.setInitialFileName(item.getName().replaceAll("\\.[^.]+$", "") + ".trimrecipe");
+                        fileChooser.setInitialFileName(file.getName().replaceAll("\\.[^.]+$", "") + ".trimrecipe");
                         if (lastRecipeDirectory != null && lastRecipeDirectory.exists()) {
                             fileChooser.setInitialDirectory(lastRecipeDirectory);
                         }
-                        
+
                         File dest = fileChooser.showSaveDialog(fileListView.getScene().getWindow());
                         if (dest != null) {
                             lastRecipeDirectory = dest.getParentFile();
@@ -298,36 +357,79 @@ public class MainController {
                             }
                         }
                     });
-                    
+
                     contextMenu.getItems().addAll(
-                        deleteItem, 
-                        new SeparatorMenuItem(), 
+                        checkItem,
+                        checkAllItem,
+                        uncheckAllItem,
+                        new SeparatorMenuItem(),
+                        deleteItem,
+                        new SeparatorMenuItem(),
                         renameItem,
                         new SeparatorMenuItem(),
-                        applyToAllItem, 
-                        resetItem, 
+                        applyToAllItem,
+                        resetItem,
                         exportSingleItem,
-                        new SeparatorMenuItem(), 
+                        new SeparatorMenuItem(),
                         copyPathItem,
                         openLocItem
                     );
                     setContextMenu(contextMenu);
                 }
             }
+
+            private void updateItemVisual(VideoItem vi) {
+                if (vi == null) return;
+                nameLabel.setText(vi.getName());
+                
+                String tooltipText = vi.getName();
+
+                // State indicator
+                getStyleClass().removeAll("list-cell-checked", "list-cell-success", "list-cell-error", "list-cell-processing");
+                stateLabel.setText(""); // Remove emojis
+
+                switch (vi.getState()) {
+                    case PROCESSING -> {
+                        getStyleClass().add("list-cell-processing");
+                    }
+                    case SUCCESS -> {
+                        getStyleClass().add("list-cell-success");
+                    }
+                    case ERROR -> {
+                        getStyleClass().add("list-cell-error");
+                        if (vi.getErrorMessage() != null) {
+                            tooltipText += "\nError: " + vi.getErrorMessage();
+                        }
+                    }
+                }
+                
+                setTooltip(new Tooltip(tooltipText));
+
+                // Checked indicator (checkbox-like)
+                if (vi.isSelected()) {
+                    if (!getStyleClass().contains("list-cell-checked")) {
+                        getStyleClass().add("list-cell-checked");
+                    }
+                } else {
+                    getStyleClass().remove("list-cell-checked");
+                }
+            }
         });
 
-        fileListView.getSelectionModel().selectedItemProperty().addListener((obs, oldFile, newFile) -> {
+        // Video seçimi: tıklanan videoyu oynat
+        fileListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVi, newVi) -> {
             // 1. Ayrılmadan önce eski videonun trim ayarlarını kaydet
-            if (oldFile != null) {
-                saveCurrentTrimForFile(oldFile);
+            if (oldVi != null) {
+                saveCurrentTrimForFile(oldVi.getFile());
             }
 
             // 2. Yeni videoya geç (restoration setOnReady içinde gerçekleşecek)
-            if (newFile != null) {
-                playVideo(newFile);
+            if (newVi != null) {
+                playVideo(newVi.getFile());
             }
         });
     }
+
 
     private void setupInspector() {
         inspector.setCellFactory(param -> new ListCell<String>() {
@@ -379,8 +481,8 @@ public class MainController {
 
             if (db.hasFiles()) {
                 for (File file : db.getFiles()) {
-                    if (isVideoFile(file) && !fileListView.getItems().contains(file)) {
-                        fileListView.getItems().add(file);
+                    if (isVideoFile(file) && findVideoItem(file) == null) {
+                        fileListView.getItems().add(new VideoItem(file));
                         success = true;
                     }
                 }
@@ -429,7 +531,7 @@ public class MainController {
      * Automatically detect intro/outro for ALL videos in the list
      */
     private void runAutoDetect() {
-        List<File> files = new ArrayList<>(fileListView.getItems());
+        List<File> files = fileListView.getItems().stream().map(VideoItem::getFile).collect(java.util.stream.Collectors.toList());
         if (files.isEmpty()) {
             infoLabel.setText("Add videos first!");
             return;
@@ -488,9 +590,9 @@ public class MainController {
             infoLabel.setText("Analysis complete: " + detected + "/" + files.size() + " videos detected");
 
             // Apply result to currently selected video
-            File selected = fileListView.getSelectionModel().getSelectedItem();
-            if (selected != null && results.containsKey(selected)) {
-                applyDetectionResult(results.get(selected));
+            VideoItem selectedVi = fileListView.getSelectionModel().getSelectedItem();
+            if (selectedVi != null && results.containsKey(selectedVi.getFile())) {
+                applyDetectionResult(results.get(selectedVi.getFile()));
             }
 
             // Store results for later use
@@ -507,6 +609,17 @@ public class MainController {
 
     // Store detection results for all videos
     private java.util.Map<File, VolumeAnalyzer.IntroOutroResult> detectionResults = new java.util.HashMap<>();
+
+    /**
+     * Helper: find the VideoItem in the list for a given File.
+     */
+    private VideoItem findVideoItem(File file) {
+        if (file == null) return null;
+        for (VideoItem item : fileListView.getItems()) {
+            if (item.getFile().equals(file)) return item;
+        }
+        return null;
+    }
 
     /**
      * Apply detection result to timeline
@@ -572,9 +685,9 @@ public class MainController {
      * Hem manual ince ayar hem de Audio Analyzer ile çalışır.
      */
     private void saveCurrentTrimToMemory() {
-        File selectedFile = fileListView.getSelectionModel().getSelectedItem();
-        if (selectedFile == null) return;
-        saveCurrentTrimForFile(selectedFile);
+        VideoItem selectedVi = fileListView.getSelectionModel().getSelectedItem();
+        if (selectedVi == null) return;
+        saveCurrentTrimForFile(selectedVi.getFile());
     }
 
     /**
@@ -610,8 +723,8 @@ public class MainController {
      * Context Menu'deki "Apply trim settings to all" seçeneği bunu çağırır.
      */
     private void applyCurrentTrimToAll() {
-        File selectedFile = fileListView.getSelectionModel().getSelectedItem();
-        if (selectedFile == null || mediaPlayer == null) {
+        VideoItem selectedVi = fileListView.getSelectionModel().getSelectedItem();
+        if (selectedVi == null || mediaPlayer == null) {
             infoLabel.setText("Please select a video first.");
             return;
         }
@@ -619,11 +732,9 @@ public class MainController {
         double start = timelineControl.getStartMarker();
         double end = timelineControl.getEndMarker();
 
-        List<File> allFiles = fileListView.getItems();
-        for (File file : allFiles) {
-            // Her video için video süresini bilmeden mock kayıt oluştur;
-            // gerçek süre sadece aktif video için bilinir, diğerleri için 0 koyuyoruz.
-            double duration = file.equals(selectedFile)
+        for (VideoItem vi : fileListView.getItems()) {
+            File file = vi.getFile();
+            double duration = file.equals(selectedVi.getFile())
                     ? mediaPlayer.getTotalDuration().toSeconds()
                     : 0;
 
@@ -633,10 +744,11 @@ public class MainController {
             detectionResults.put(file, result);
         }
 
-        String msg = String.format("\uD83D\uDCCB Applied [%s – %s] to %d file(s)",
-                formatTime(start), formatTime(end), allFiles.size());
+        int count = fileListView.getItems().size();
+        String msg = String.format("\uD83D\uDCCB Applied [%s \u2013 %s] to %d file(s)",
+                formatTime(start), formatTime(end), count);
         inspector.getItems().add(msg);
-        infoLabel.setText("Settings applied to " + allFiles.size() + " file(s)");
+        infoLabel.setText("Settings applied to " + count + " file(s)");
     }
 
     @FXML
@@ -662,8 +774,8 @@ public class MainController {
             AppSettings.getInstance().save();
             
             for (File file : selectedFiles) {
-                if (!fileListView.getItems().contains(file)) {
-                    fileListView.getItems().add(file);
+                if (findVideoItem(file) == null) {
+                    fileListView.getItems().add(new VideoItem(file));
                 }
             }
 
@@ -825,12 +937,13 @@ public class MainController {
 
     @FXML
     private void handleTrim() {
-        File file = fileListView.getSelectionModel().getSelectedItem();
-        if (file == null) {
+        VideoItem selectedVi = fileListView.getSelectionModel().getSelectedItem();
+        if (selectedVi == null) {
             infoLabel.setText("Select a video first!");
             return;
         }
 
+        File file = selectedVi.getFile();
         String input = file.getAbsolutePath();
         String output = AppSettings.getInstance().getOutputPath(input);
         TrimStrategy strategy = strategies.get(currentMethod);
@@ -845,6 +958,8 @@ public class MainController {
 
         progressBar.setProgress(-1);
         infoLabel.setText("Processing...");
+        selectedVi.setState(ProcessState.PROCESSING);
+        fileListView.refresh();
 
         Task<Boolean> task = new Task<>() {
             @Override
@@ -858,12 +973,24 @@ public class MainController {
         task.setOnSucceeded(e -> {
             progressBar.progressProperty().unbind();
             progressBar.setProgress(1);
-            infoLabel.setText(task.getValue() ? "Trim successful!" : "Trim failed.");
+            if (task.getValue()) {
+                selectedVi.setState(ProcessState.SUCCESS);
+                selectedVi.setSelected(false); // Otomatik temizlik
+                infoLabel.setText("Trim successful!");
+            } else {
+                selectedVi.setState(ProcessState.ERROR);
+                selectedVi.setErrorMessage("Trim returned false");
+                infoLabel.setText("Trim failed.");
+            }
+            fileListView.refresh();
         });
 
         task.setOnFailed(e -> {
             progressBar.progressProperty().unbind();
             progressBar.setProgress(0);
+            selectedVi.setState(ProcessState.ERROR);
+            selectedVi.setErrorMessage(task.getException().getMessage());
+            fileListView.refresh();
             infoLabel.setText("ERROR: " + task.getException().getMessage());
         });
 
@@ -872,7 +999,16 @@ public class MainController {
 
     @FXML
     private void handleBatchTrim() {
-        List<File> files = fileListView.getItems();
+        // Sadece checked olan videoları işle, hiç checked yoksa tümünü işle
+        List<VideoItem> targetItems = fileListView.getItems().stream()
+                .filter(VideoItem::isSelected)
+                .collect(java.util.stream.Collectors.toList());
+
+        if (targetItems.isEmpty()) {
+            targetItems = new ArrayList<>(fileListView.getItems());
+        }
+
+        List<File> files = targetItems.stream().map(VideoItem::getFile).collect(java.util.stream.Collectors.toList());
         TrimStrategy strategy = strategies.get(currentMethod);
 
         if (files.isEmpty()) {
@@ -888,16 +1024,27 @@ public class MainController {
         double start = timelineControl.getStartMarker();
         double end = timelineControl.getEndMarker();
 
+        // Tüm hedefleri PROCESSING yap
+        List<VideoItem> finalTargetItems = targetItems;
+        finalTargetItems.forEach(vi -> vi.setState(ProcessState.PROCESSING));
+        fileListView.refresh();
+
         progressBar.setProgress(0);
         inspector.getItems().clear();
 
         ProgressUpdater updater = new ProgressUpdater(files.size(), (progress, file) -> {
             Platform.runLater(() -> {
                 progressBar.setProgress(progress);
+                VideoItem vi = findVideoItem(file);
+                if (vi != null) {
+                    vi.setState(ProcessState.SUCCESS);
+                    vi.setSelected(false); // Otomatik temizlik
+                }
                 inspector.getItems().add(file.getName() + " → done ✓");
                 if (progress >= 1.0) {
                     infoLabel.setText("Batch trim complete!");
                 }
+                fileListView.refresh();
             });
         });
 
@@ -1075,11 +1222,12 @@ public class MainController {
     }
 
     private void removeSelectedFile() {
-        File selected = fileListView.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            fileListView.getItems().remove(selected);
-            infoLabel.setText("Removed: " + selected.getName());
-            logger.debug("Removed file: {}", selected.getName());
+        VideoItem selectedVi = fileListView.getSelectionModel().getSelectedItem();
+        if (selectedVi != null) {
+            detectionResults.remove(selectedVi.getFile());
+            fileListView.getItems().remove(selectedVi);
+            infoLabel.setText("Removed: " + selectedVi.getName());
+            logger.debug("Removed file: {}", selectedVi.getName());
 
             // If no files left, clear player
             if (fileListView.getItems().isEmpty() && mediaPlayer != null) {
@@ -1125,8 +1273,8 @@ public class MainController {
 
         // Fallback: If empty, use the current manual trim on the active video
         if (exportData.isEmpty()) {
-            File selectedFile = fileListView.getSelectionModel().getSelectedItem();
-            if (selectedFile != null && mediaPlayer != null) {
+            VideoItem selectedVi = fileListView.getSelectionModel().getSelectedItem();
+            if (selectedVi != null && mediaPlayer != null) {
                 double duration = mediaPlayer.getTotalDuration().toSeconds();
                 double start = timelineControl.getStartMarker();
                 double end = timelineControl.getEndMarker();
@@ -1135,7 +1283,7 @@ public class MainController {
                 VolumeAnalyzer.IntroOutroResult mockResult = new VolumeAnalyzer.IntroOutroResult(
                     0, start, end, duration, start, end, duration
                 );
-                exportData.put(selectedFile, mockResult);
+                exportData.put(selectedVi.getFile(), mockResult);
             }
         }
 
@@ -1209,7 +1357,8 @@ public class MainController {
                 
                 int matchedCount = 0;
                 
-                for (File file : fileListView.getItems()) {
+                for (VideoItem vi : fileListView.getItems()) {
+                    File file = vi.getFile();
                     try {
                         double duration = VolumeAnalyzer.getVideoDuration(file.getAbsolutePath());
                         var matchOpt = matcher.match(file, duration, recipe.getEpisodes());
@@ -1235,7 +1384,7 @@ public class MainController {
                             matchedCount++;
                             
                             // If this is the currently selected file, apply the new result immediately
-                            if (file.equals(fileListView.getSelectionModel().getSelectedItem())) {
+                            if (vi.equals(fileListView.getSelectionModel().getSelectedItem())) {
                                 applyDetectionResult(result);
                             }
                         }
