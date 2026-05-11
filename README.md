@@ -123,6 +123,7 @@ src/main/java/com/example/massvideocutter/
 - [ ] **Preset Library** - Save/load trim presets per series
 - [ ] **Timeline Zoom** - Zoom in/out on specific sections
 - [ ] **Thumbnail Strip** - Show video thumbnails on timeline
+- [ ] **List Filtering** - Filter video list by status (Pending, Success, Error)
 
 ---
 

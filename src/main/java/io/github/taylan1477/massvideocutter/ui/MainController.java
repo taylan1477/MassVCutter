@@ -169,7 +169,148 @@ public class MainController {
                     MenuItem applyToAllItem = new MenuItem("\uD83D\uDCCB Apply trim settings to all");
                     applyToAllItem.setOnAction(e -> applyCurrentTrimToAll());
                     
-                    contextMenu.getItems().addAll(deleteItem, new SeparatorMenuItem(), applyToAllItem, new SeparatorMenuItem(), openLocItem);
+                    MenuItem resetItem = new MenuItem("\u21BA Reset Markers (0 to Max)");
+                    resetItem.setOnAction(e -> {
+                        // Seçili videonun hafızasını temizle
+                        detectionResults.remove(item);
+                        // Eğer aktif oynatılan videoysa UI'ı da sıfırla
+                        if (item.equals(fileListView.getSelectionModel().getSelectedItem()) && mediaPlayer != null) {
+                            double duration = mediaPlayer.getTotalDuration().toSeconds();
+                            timelineControl.setStartMarker(0);
+                            timelineControl.setEndMarker(duration);
+                            startTimeLabel.setText("START: 00:00");
+                            endTimeLabel.setText("END: " + formatTime(duration));
+                        }
+                        infoLabel.setText("Markers reset for: " + item.getName());
+                    });
+
+                    MenuItem copyPathItem = new MenuItem("\uD83D\uDCCB Copy File Path");
+                    copyPathItem.setOnAction(e -> {
+                        javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+                        content.putString(item.getAbsolutePath());
+                        javafx.scene.input.Clipboard.getSystemClipboard().setContent(content);
+                        infoLabel.setText("Path copied to clipboard.");
+                    });
+                    
+                    MenuItem renameItem = new MenuItem("\u270F Rename Source File");
+                    renameItem.setOnAction(e -> {
+                        TextInputDialog dialog = new TextInputDialog(item.getName());
+                        dialog.setTitle("Rename File");
+                        dialog.setHeaderText("Rename: " + item.getName());
+                        dialog.setContentText("New Name:");
+                        
+                        // Apply dark theme to dialog
+                        dialog.getDialogPane().getStylesheets().add(getClass().getResource("/io/github/taylan1477/massvideocutter/css/style.css").toExternalForm());
+                        
+                        dialog.showAndWait().ifPresent(newName -> {
+                            if (newName.isEmpty() || newName.equals(item.getName())) return;
+                            
+                            File newFile = new File(item.getParentFile(), newName);
+                            if (newFile.exists()) {
+                                infoLabel.setText("Error: A file with that name already exists.");
+                                return;
+                            }
+                            
+                            // If current file is playing, release it first
+                            boolean wasActive = item.equals(fileListView.getSelectionModel().getSelectedItem());
+                            if (wasActive && mediaPlayer != null) {
+                                mediaPlayer.stop();
+                                mediaPlayer.dispose();
+                                mediaPlayer = null;
+                            }
+                            
+                            if (item.renameTo(newFile)) {
+                                // Update List
+                                int index = fileListView.getItems().indexOf(item);
+                                fileListView.getItems().set(index, newFile);
+                                
+                                // Update Memory
+                                var result = detectionResults.remove(item);
+                                if (result != null) {
+                                    detectionResults.put(newFile, result);
+                                }
+                                
+                                if (wasActive) {
+                                    fileListView.getSelectionModel().select(newFile);
+                                }
+                                infoLabel.setText("File renamed successfully.");
+                            } else {
+                                infoLabel.setText("Error: Rename failed. File might be in use.");
+                            }
+                        });
+                    });
+
+                    MenuItem exportSingleItem = new MenuItem("\uD83D\uDCE4 Export Only This Trim");
+                    exportSingleItem.setOnAction(e -> {
+                        double duration = 0;
+                        double start = 0;
+                        double end = 0;
+                        
+                        if (item.equals(fileListView.getSelectionModel().getSelectedItem()) && mediaPlayer != null) {
+                            duration = mediaPlayer.getTotalDuration().toSeconds();
+                            start = timelineControl.getStartMarker();
+                            end = timelineControl.getEndMarker();
+                        } else {
+                            var res = detectionResults.get(item);
+                            if (res != null) {
+                                duration = res.videoDuration;
+                                start = res.recommendedTrimStart;
+                                end = res.recommendedTrimEnd;
+                            }
+                        }
+                        
+                        if (duration == 0) {
+                            try {
+                                duration = VolumeAnalyzer.getVideoDuration(item.getAbsolutePath());
+                            } catch (Exception ex) {}
+                        }
+                        
+                        if (end == 0) end = duration;
+
+                        TrimRecipe recipe = new TrimRecipe();
+                        recipe.setSeries("Single Export");
+                        recipe.setVersion(1);
+                        
+                        EpisodeTrim ep = new EpisodeTrim();
+                        ep.setEp(EpisodeMatcher.extractEpisodeNumber(item.getName()));
+                        ep.setDuration(duration);
+                        ep.setIntroEnd(start);
+                        ep.setOutroStart(end);
+                        ep.setOutroEnd(duration);
+                        
+                        recipe.getEpisodes().add(ep);
+                        
+                        FileChooser fileChooser = new FileChooser();
+                        fileChooser.setTitle("Export Single Trim Recipe");
+                        fileChooser.setInitialFileName(item.getName().replaceAll("\\.[^.]+$", "") + ".trimrecipe");
+                        if (lastRecipeDirectory != null && lastRecipeDirectory.exists()) {
+                            fileChooser.setInitialDirectory(lastRecipeDirectory);
+                        }
+                        
+                        File dest = fileChooser.showSaveDialog(fileListView.getScene().getWindow());
+                        if (dest != null) {
+                            lastRecipeDirectory = dest.getParentFile();
+                            try {
+                                new RecipeManager().exportRecipe(dest, recipe);
+                                infoLabel.setText("Single recipe exported!");
+                            } catch (Exception ex) {
+                                logger.error("Failed single export", ex);
+                            }
+                        }
+                    });
+                    
+                    contextMenu.getItems().addAll(
+                        deleteItem, 
+                        new SeparatorMenuItem(), 
+                        renameItem,
+                        new SeparatorMenuItem(),
+                        applyToAllItem, 
+                        resetItem, 
+                        exportSingleItem,
+                        new SeparatorMenuItem(), 
+                        copyPathItem,
+                        openLocItem
+                    );
                     setContextMenu(contextMenu);
                 }
             }
