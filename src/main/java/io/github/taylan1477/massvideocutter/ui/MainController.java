@@ -4,6 +4,7 @@ import io.github.taylan1477.massvideocutter.core.*;
 import io.github.taylan1477.massvideocutter.core.ffmpeg.FFmpegWrapper;
 import io.github.taylan1477.massvideocutter.core.trimdb.EpisodeMatcher;
 import io.github.taylan1477.massvideocutter.core.trimdb.RecipeManager;
+import io.github.taylan1477.massvideocutter.core.trimdb.TrimDbApiClient;
 import io.github.taylan1477.massvideocutter.model.EpisodeTrim;
 import io.github.taylan1477.massvideocutter.model.ProcessState;
 import io.github.taylan1477.massvideocutter.model.TrimRecipe;
@@ -146,6 +147,7 @@ public class MainController {
                 root.getChildren().addAll(stateLabel, nameLabel);
                 nameLabel.setMaxWidth(Double.MAX_VALUE);
                 nameLabel.setTextOverrun(javafx.scene.control.OverrunStyle.CENTER_ELLIPSIS);
+                nameLabel.getStyleClass().add("file-list-name");
                 HBox.setHgrow(nameLabel, Priority.ALWAYS);
                 stateLabel.setMinWidth(Region.USE_PREF_SIZE);
             }
@@ -331,7 +333,7 @@ public class MainController {
                         recipe.setVersion(1);
 
                         EpisodeTrim ep = new EpisodeTrim();
-                        ep.setEp(EpisodeMatcher.extractEpisodeNumber(file.getName()));
+                        ep.setEp(EpisodeMatcher.extractEpisodeNumber(file.getName(), null));
                         ep.setDuration(duration);
                         ep.setIntroEnd(start);
                         ep.setOutroStart(end);
@@ -437,7 +439,7 @@ public class MainController {
             {
                 label.setWrapText(true);
                 // Keep style consistent with the theme, use padding to adjust height and alignment
-                label.setStyle("-fx-text-fill: #cccccc; -fx-padding: 8px 5px;");
+                label.getStyleClass().add("inspector-label");
                 // Bind width to ListView width so the text knows when to wrap
                 label.prefWidthProperty().bind(inspector.widthProperty().subtract(24));
             }
@@ -1268,6 +1270,84 @@ public class MainController {
     }
 
     @FXML
+    private void handleBrowseTrimDb() {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/io/github/taylan1477/massvideocutter/trimdb_browser.fxml"));
+            Parent root = loader.load();
+
+            TrimDbBrowserController controller = loader.getController();
+
+            Stage stage = new Stage();
+            stage.setTitle("TrimDB Browser");
+            stage.initModality(Modality.APPLICATION_MODAL);
+            stage.initOwner(menuBar.getScene().getWindow());
+            stage.setScene(new Scene(root));
+            stage.setResizable(true);
+
+            // Apply dark theme
+            stage.getScene().getStylesheets().add(Objects.requireNonNull(
+                    getClass().getResource("/io/github/taylan1477/massvideocutter/css/style.css")).toExternalForm());
+
+            stage.showAndWait();
+
+            // If user selected and applied a recipe, apply it to loaded videos
+            if (controller.isApplied() && controller.getSelectedRecipe() != null) {
+                TrimRecipe recipe = controller.getSelectedRecipe();
+                applyRecipeToLoadedVideos(recipe);
+            }
+        } catch (Exception e) {
+            logger.error("Failed to open TrimDB Browser", e);
+            infoLabel.setText("Error opening TrimDB Browser.");
+        }
+    }
+
+    /**
+     * Applies a TrimRecipe's episodes to the currently loaded video files using EpisodeMatcher.
+     */
+    private void applyRecipeToLoadedVideos(TrimRecipe recipe) {
+        EpisodeMatcher matcher = new EpisodeMatcher();
+        int matchedCount = 0;
+
+        for (VideoItem vi : fileListView.getItems()) {
+            File file = vi.getFile();
+            try {
+                double duration = VolumeAnalyzer.getVideoDuration(file.getAbsolutePath());
+                var matchOpt = matcher.match(file, duration, recipe.getEpisodes(), recipe.getSeries());
+
+                if (matchOpt.isPresent()) {
+                    EpisodeTrim matchedEp = matchOpt.get();
+
+                    double introStart = matchedEp.getIntroStart() != null ? matchedEp.getIntroStart() : -1;
+                    double introEnd = matchedEp.getIntroEnd() != null ? matchedEp.getIntroEnd() : -1;
+                    double outroStart = matchedEp.getOutroStart() != null ? matchedEp.getOutroStart() : -1;
+                    double outroEnd = matchedEp.getOutroEnd() != null ? matchedEp.getOutroEnd() : -1;
+
+                    double trimStart = (introEnd != -1) ? introEnd : 0;
+                    double trimEnd = (outroStart != -1) ? outroStart : duration;
+
+                    VolumeAnalyzer.IntroOutroResult result = new VolumeAnalyzer.IntroOutroResult(
+                            introStart, introEnd, outroStart, outroEnd, trimStart, trimEnd, duration
+                    );
+
+                    detectionResults.put(file, result);
+                    inspector.getItems().add(file.getName() + ": Matched Ep " + matchedEp.getEp());
+                    matchedCount++;
+
+                    if (vi.equals(fileListView.getSelectionModel().getSelectedItem())) {
+                        applyDetectionResult(result);
+                    }
+                }
+            } catch (Exception ex) {
+                logger.error("Error matching file: {}", file.getName(), ex);
+            }
+        }
+
+        infoLabel.setText(String.format("TrimDB recipe applied: Matched %d/%d files.", matchedCount, fileListView.getItems().size()));
+        currentMethod = TrimMethod.AUDIO_ANALYZER;
+        methodGroup.selectToggle(btnAudio);
+    }
+
+    @FXML
     private void handleExportRecipe() {
         Map<File, VolumeAnalyzer.IntroOutroResult> exportData = new java.util.HashMap<>(detectionResults);
 
@@ -1328,6 +1408,22 @@ public class MainController {
                     manager.exportRecipe(dest, recipe);
                     infoLabel.setText("Recipe exported successfully!");
                 }
+
+                // Also upload to TrimDB if requested
+                if (controller.isUploadRequested()) {
+                    try {
+                        TrimDbApiClient apiClient = new TrimDbApiClient();
+                        TrimRecipe uploaded = apiClient.uploadRecipe(recipe);
+                        if (uploaded != null) {
+                            infoLabel.setText(infoLabel.getText() + " Also uploaded to TrimDB!");
+                        } else {
+                            infoLabel.setText(infoLabel.getText() + " (TrimDB upload failed)");
+                        }
+                    } catch (Exception uploadEx) {
+                        logger.error("Failed to upload recipe to TrimDB", uploadEx);
+                        infoLabel.setText(infoLabel.getText() + " (TrimDB upload error)");
+                    }
+                }
             }
         } catch (Exception e) {
             logger.error("Failed to export recipe", e);
@@ -1361,7 +1457,7 @@ public class MainController {
                     File file = vi.getFile();
                     try {
                         double duration = VolumeAnalyzer.getVideoDuration(file.getAbsolutePath());
-                        var matchOpt = matcher.match(file, duration, recipe.getEpisodes());
+                        var matchOpt = matcher.match(file, duration, recipe.getEpisodes(), recipe.getSeries());
                         
                         if (matchOpt.isPresent()) {
                             EpisodeTrim matchedEp = matchOpt.get();

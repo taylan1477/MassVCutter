@@ -1,5 +1,6 @@
 package io.github.taylan1477.trimdb.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -12,6 +13,7 @@ public class EpisodeTrimEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @JsonProperty("ep")
     private Integer episode;
     private String title;
     private Double duration;

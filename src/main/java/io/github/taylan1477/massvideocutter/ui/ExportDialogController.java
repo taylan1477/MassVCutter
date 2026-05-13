@@ -5,6 +5,7 @@ import io.github.taylan1477.massvideocutter.core.trimdb.EpisodeMatcher;
 import io.github.taylan1477.massvideocutter.model.EpisodeTrim;
 import io.github.taylan1477.massvideocutter.model.TrimRecipe;
 import javafx.fxml.FXML;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
@@ -20,8 +21,10 @@ public class ExportDialogController {
     @FXML private TextField descriptionField;
     @FXML private TextField contributorField;
     @FXML private Label statsLabel;
+    @FXML private CheckBox uploadCheckBox;
 
     private boolean confirmed = false;
+    private boolean uploadRequested = false;
     private TrimRecipe generatedRecipe;
 
     public void initData(Map<File, VolumeAnalyzer.IntroOutroResult> detectionResults) {
@@ -34,9 +37,16 @@ public class ExportDialogController {
             VolumeAnalyzer.IntroOutroResult result = entry.getValue();
             
             Double duration = result.videoDuration;
-            if (duration == null || duration <= 0) continue; // Duration is required for matching
+            if (duration == null || duration <= 0) {
+                try {
+                    duration = VolumeAnalyzer.getVideoDuration(file.getAbsolutePath());
+                } catch (Exception e) {
+                    continue; // Skip if we really can't get duration
+                }
+            }
+            if (duration <= 0) continue;
             
-            int epNum = EpisodeMatcher.extractEpisodeNumber(file.getName());
+            int epNum = EpisodeMatcher.extractEpisodeNumber(file.getName(), null);
             if (epNum == -1) epNum = episodes.size() + 1; // Fallback to index if regex fails
 
             EpisodeTrim ep = new EpisodeTrim(epNum, duration);
@@ -69,6 +79,7 @@ public class ExportDialogController {
         generatedRecipe.setContributor(contributorField.getText().trim().isEmpty() ? "Anonymous" : contributorField.getText().trim());
         
         confirmed = true;
+        uploadRequested = uploadCheckBox != null && uploadCheckBox.isSelected();
         closeDialog();
     }
 
@@ -89,5 +100,9 @@ public class ExportDialogController {
 
     public TrimRecipe getRecipe() {
         return generatedRecipe;
+    }
+
+    public boolean isUploadRequested() {
+        return uploadRequested;
     }
 }

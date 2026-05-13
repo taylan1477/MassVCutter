@@ -788,3 +788,38 @@
     -fx-background-radius: 6px;
     -fx-padding: 4px;
 }
+/* TrimDB Browser */
+.recipe-title {
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+    -fx-text-fill: #e0e0e0;
+}
+.recipe-detail {
+    -fx-font-size: 13px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #bbbbbb;
+}
+.list-cell:filled:selected .recipe-title,
+.list-cell:filled:selected .recipe-detail {
+    -fx-text-fill: #000000;
+}
+
+/* Inspector Log (Activity Log) */
+.inspector-label {
+    -fx-text-fill: #ffffff;
+    -fx-padding: 8px 5px;
+    -fx-font-size: 13px;
+}
+.list-cell:filled:selected .inspector-label {
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+}
+
+/* File List (Left Panel) */
+.file-list-name {
+    -fx-text-fill: #e0e0e0;
+}
+.list-cell:filled:selected .file-list-name {
+    -fx-text-fill: #000000;
+    -fx-font-weight: bold;
+}

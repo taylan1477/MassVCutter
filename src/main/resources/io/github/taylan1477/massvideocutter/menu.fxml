@@ -39,6 +39,9 @@
                <SeparatorMenuItem />
                <MenuItem mnemonicParsing="false" text="Settings..." onAction="#handleSettings" />
             </Menu>
+            <Menu mnemonicParsing="false" text="TrimDB">
+               <MenuItem mnemonicParsing="false" text="Browse TrimDB..." onAction="#handleBrowseTrimDb" />
+            </Menu>
             <Menu mnemonicParsing="false" text="Help">
                <MenuItem mnemonicParsing="false" text="About" onAction="#handleAbout" />
             </Menu>

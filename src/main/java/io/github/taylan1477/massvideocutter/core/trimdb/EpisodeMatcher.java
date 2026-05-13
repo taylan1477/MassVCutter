@@ -28,9 +28,9 @@ public class EpisodeMatcher {
      * @param candidates The list of episodes from the TrimRecipe
      * @return An Optional containing the matched EpisodeTrim, or empty if no good match
      */
-    public Optional<EpisodeTrim> match(File videoFile, double videoDuration, List<EpisodeTrim> candidates) {
+    public Optional<EpisodeTrim> match(File videoFile, double videoDuration, List<EpisodeTrim> candidates, String seriesName) {
         String filename = videoFile.getName();
-        int extractedEp = extractEpisodeNumber(filename);
+        int extractedEp = extractEpisodeNumber(filename, seriesName);
         
         logger.debug("Matching file: {} (extracted ep: {}, duration: {}s)", filename, extractedEp, videoDuration);
 
@@ -49,6 +49,9 @@ public class EpisodeMatcher {
             // If duration is within 2 seconds, it's a very strong match
             if (candidate.getDuration() != null) {
                 double diff = Math.abs(videoDuration - candidate.getDuration());
+                if (diff > 60.0) {
+                    continue; // Skip this candidate: duration is too different (likely already trimmed or wrong version)
+                }
                 if (diff <= 2.0) {
                     score += 3.0;
                 } else if (diff <= 5.0) {
@@ -73,10 +76,23 @@ public class EpisodeMatcher {
         return Optional.empty();
     }
 
-    public static int extractEpisodeNumber(String filename) {
+    public static int extractEpisodeNumber(String filename, String seriesName) {
         // Clean filename extension and resolution first to avoid matching them as episode numbers (e.g. 1080p, 720p, 4k)
         String cleanName = filename.replaceAll("(?i)\\b(1080p|720p|480p|4k)\\b", "")
                                    .replaceAll("\\.(mp4|mkv|avi|ts|mov|webm|flv)$", "");
+
+        // Strip out common tokens from series name to avoid false positives (e.g. "2nd", "2")
+        if (seriesName != null && !seriesName.isEmpty()) {
+            String[] tokens = seriesName.split("[\\s\\-_]+");
+            for (String token : tokens) {
+                if (token.length() > 0) {
+                    cleanName = cleanName.replaceAll("(?i)\\b" + Pattern.quote(token) + "\\b", "");
+                }
+            }
+        }
+        
+        // Also remove generic ordinal indicators that often confuse the fallback regex
+        cleanName = cleanName.replaceAll("(?i)\\b\\d+(st|nd|rd|th)\\b", "");
 
         for (Pattern pattern : EPISODE_PATTERNS) {
             Matcher m = pattern.matcher(cleanName);
